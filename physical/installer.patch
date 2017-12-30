@@ -1,0 +1,134 @@
+Only in backup/build: apt.udeb
+diff -u -r backup/build/boot/x86/adgtk.cfg installer/build/boot/x86/adgtk.cfg
+--- backup/build/boot/x86/adgtk.cfg	2017-12-30 11:01:23.710705614 +0000
++++ installer/build/boot/x86/adgtk.cfg	2017-03-26 14:32:21.000000000 +0000
+@@ -4,9 +4,9 @@
+ label expertgui
+ 	menu label Graphical expert install
+ 	kernel ${KERNEL}
+-	append desktop=%desktop% priority=low auto-install/enable ${VIDEO_MODE_GTK} initrd=${INITRD_GTK} --- ${CONSOLE}
++	append desktop=%desktop% priority=low ${VIDEO_MODE_GTK} initrd=${INITRD_GTK} --- ${CONSOLE}
+ include ${SYSDIR}rqgtk.cfg
+ label autogui
+ 	menu label Graphical automated install
+ 	kernel ${KERNEL}
+-	append desktop=%desktop% auto=true priority=critical auto-install/enable ${VIDEO_MODE_GTK} initrd=${INITRD_GTK} --- quiet ${CONSOLE} 
++	append desktop=%desktop% auto=true priority=critical ${VIDEO_MODE_GTK} initrd=${INITRD_GTK} --- quiet ${CONSOLE}
+diff -u -r backup/build/boot/x86/adtxt.cfg installer/build/boot/x86/adtxt.cfg
+--- backup/build/boot/x86/adtxt.cfg	2017-12-30 11:01:23.710705614 +0000
++++ installer/build/boot/x86/adtxt.cfg	2017-06-22 04:16:34.000000000 +0000
+@@ -1,5 +1,9 @@
+-default auto
++label expert
++	menu label E^xpert install
++	kernel ${KERNEL}
++	append desktop=%desktop% priority=low ${VIDEO_MODE} initrd=${INITRD} --- ${CONSOLE}
++include ${SYSDIR}rqtxt.cfg
+ label auto
+ 	menu label ^Automated install
+ 	kernel ${KERNEL}
+-	append desktop=%desktop% auto=true priority=critical auto-install/enable ${VIDEO_MODE} initrd=${INITRD} --- quiet ${CONSOLE}
++	append desktop=%desktop% auto=true priority=critical ${VIDEO_MODE} initrd=${INITRD} --- quiet ${CONSOLE}
+diff -u -r backup/build/boot/x86/gtk.cfg installer/build/boot/x86/gtk.cfg
+--- backup/build/boot/x86/gtk.cfg	2017-12-30 11:01:23.706705629 +0000
++++ installer/build/boot/x86/gtk.cfg	2017-06-22 04:16:34.000000000 +0000
+@@ -1,3 +1,4 @@
++default installgui
+ label installgui
+ 	menu label ^Graphical install
+ 	menu default
+diff -u -r backup/build/boot/x86/menu.cfg installer/build/boot/x86/menu.cfg
+--- backup/build/boot/x86/menu.cfg	2017-12-30 11:01:23.710705614 +0000
++++ installer/build/boot/x86/menu.cfg	2017-06-22 04:16:34.000000000 +0000
+@@ -2,27 +2,27 @@
+ menu width 61
+ 
+ menu title ${BEEP}Debian GNU/Linux installer boot menu
+-menu background ${SYSDIR}splash.png
+-menu color title	* #FFFFFFFF *
+-menu color border	* #00000000 #00000000 none
+-menu color sel		* #ffffffff #76a1d0ff *
+-menu color hotsel	1;7;37;40 #ffffffff #76a1d0ff *
+-menu color tabmsg	* #ffffffff #00000000 *
+-menu color help		37;40 #ffdddd00 #00000000 none
+-# XXX When adjusting vshift, take care that rows is set to a small
+-# enough value so any possible menu will fit on the screen,
+-# rather than falling off the bottom.
+-menu vshift 8
+-menu rows 12
+-# The help line must be at least one line from the bottom.
+-menu helpmsgrow 14
+-# The command line must be at least one line from the help line.
+-menu cmdlinerow 16
+-menu timeoutrow 16
+-menu tabmsgrow 18
+-menu tabmsg Press ENTER to boot or TAB to edit a menu entry
+-default auto
+-label auto
+-	menu label ^Automated install
+-	kernel ${KERNEL}
+-	append desktop=%desktop% auto=true priority=critical auto-install/enable preseed/url=http://172.16.1.20/preseed.cfg ${VIDEO_MODE} initrd=${INITRD} --- quiet ${CONSOLE}
++include ${SYSDIR}stdmenu.cfg
++include ${SYSDIR}gtk.cfg
++include ${SYSDIR}txt.cfg
++menu begin advanced
++    menu label ^Advanced options
++	menu title Advanced options
++	include ${SYSDIR}stdmenu.cfg
++	label mainmenu
++		menu label ^Back..
++		menu exit
++	include ${SYSDIR}adgtk.cfg
++	include ${SYSDIR}adtxt.cfg
++	include ${SYSDIR}adspkgtk.cfg
++	include ${SYSDIR}adspk.cfg
++menu end
++include ${SYSDIR}x86menu.cfg
++label help
++	menu label ^Help
++	text help
++   Display help screens; type 'menu' at boot prompt to return to this menu
++	endtext
++	config ${SYSDIR}prompt.cfg
++include ${SYSDIR}spkgtk.cfg
++include ${SYSDIR}spk.cfg
+Only in backup/build/boot/x86/pics: softwaves.png
+diff -u -r backup/build/boot/x86/syslinux.cfg installer/build/boot/x86/syslinux.cfg
+--- backup/build/boot/x86/syslinux.cfg	2017-12-30 11:01:23.710705614 +0000
++++ installer/build/boot/x86/syslinux.cfg	2016-10-25 01:51:43.000000000 +0000
+@@ -3,5 +3,5 @@
+ path ${SYSDIR}
+ include ${SYSDIR}menu.cfg
+ default ${SYSDIR}vesamenu.c32
+-prompt 1
+-timeout 10
++prompt 0
++timeout 0
+Only in backup/build/config: local
+Only in backup/build/localudebs: Packages
+Only in backup/build/localudebs: Packages.gz
+diff -u -r backup/build/pkg-lists/netboot/amd64.cfg installer/build/pkg-lists/netboot/amd64.cfg
+--- backup/build/pkg-lists/netboot/amd64.cfg	2017-12-30 11:01:23.766705407 +0000
++++ installer/build/pkg-lists/netboot/amd64.cfg	2016-10-25 01:51:43.000000000 +0000
+@@ -1,4 +1,3 @@
+-#include "network-console"
+ console-setup-pc-ekmap
+ 
+ bogl-bterm-udeb
+@@ -23,6 +22,13 @@
+ usb-storage-modules-${kernel:Version}
+ mmc-modules-${kernel:Version} ?
+ 
++# Netboot over pcmcia is unlikely, but one never knows, and this makes
++# pcmcia network interfaces available, as well as making sure pcmcia is
++# available in netboot installs at all.
++nic-pcmcia-modules-${kernel:Version}
++pcmcia-modules-${kernel:Version}
++pcmciautils-udeb
++
+ hw-detect
+ ethdetect
+ netcfg
+Only in backup/build: sources.list.udeb
+Only in backup/build: stamps
+Only in backup/build: udebs
