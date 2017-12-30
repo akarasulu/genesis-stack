@@ -1,12 +1,39 @@
 #!/bin/bash
 
+# Simple Parameters
+LOCALES='en_US en_US.UTF-8'
+LANGUAGE='en'
+COUNTRY='US'
 
+# Associated with our scheme
+
+## TODO do this from all sourced environment variables
+if [ -z "$DEBUG" ]; then
+    DEBUG='true'
+fi
+
+if [ -z "$ENVIRONMENT" ]; then
+    ENVIRONMENT='mock'
+fi
+
+KEYS_HOST='172.16.1.20'
+KEYS_PORT='80'
+KEYS_FILE='authorized_keys'
+AUTHORIZED_KEYS_URL='http://'$KEYS_HOST':'$KEYS_PORT'/'$ENVIRONMENT'/'$KEYS_FILE
+
+ENABLE_NETCON="$DEBUG"
+
+INFRA_FULLNAME="Infra Team"
+INFRA_ACCOUNT="infra"
+INFRA_ACCOUNT_PW=""
+
+cat > ./preseed.cfg <<-EOF
 # Net console
-d-i debian-installer/locale            string en_US
 d-i debconf/priority                   select critical
 d-i auto-install/enabled               boolean true
+
 d-i anna/choose_modules string network-console
-# d-i preseed/early_command string anna-install network-console
+d-i preseed/early_command string anna-install network-console
 d-i network-console/password-disabled boolean true
 d-i network-console/authorized_keys_url string http://172.16.1.20/authorized_keys
 
@@ -100,4 +127,4 @@ cd /target; \
 wget http://172.16.1.20/postinst-in-target; \
 in-target /postinst-in-target; \
 rm -f ./postinst-in-target;
-
+EOF

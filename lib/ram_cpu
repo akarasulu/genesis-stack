@@ -1,0 +1,55 @@
+#!/bin/sh
+
+. ./general
+
+#
+# RAM and CPU query functions
+#
+
+# ARGS: path to folder for pvms
+# OUTPUTS: dmi_processor.txt file
+dmi_processor () {
+    local outputfile="$1"'/dmi_processor.txt'
+    dmidecode > dmidecode.txt
+    mode='out'
+    while read line; do
+        if [ -n "`echo $line | grep 'Processor Information'`" ]; then
+            mode='in'
+            echo $line > $outputfile
+            continue
+        fi
+
+        if [ "$mode" == "in" ]; then
+            if [ -z "$line" ]; then
+                mode='out'
+            fi
+
+            if [ -z "`echo $line | grep :`" ]; then
+                echo '    '$line >> $outputfile
+            else
+                echo '  '$line >> $outputfile
+            fi
+        fi
+    done < dmidecode.txt
+    rm dmidecode.txt
+}
+
+# ARGS: path to folder for pvms
+# OUTPUTS: cpu_info.txt file
+cpu_info () {
+    local outputfile="$1"'/cpu_info.txt'
+    local CORES=`cat /proc/cpuinfo | grep processor | wc | cut -d ' ' -f 1`
+    local pattern='^processor.*:.*'$(($CORES - 1))
+    local mode='out'
+
+    while read line; do
+        if [ -n "`echo $line | egrep $pattern`" ]; then
+            mode='in'
+        fi
+
+        if [ "$mode" == "in" ]; then
+            echo $line >> $outputfile
+        fi
+    done < /proc/cpuinfo
+}
+

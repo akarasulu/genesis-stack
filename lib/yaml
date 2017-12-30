@@ -5,37 +5,6 @@
 # -------  so make sure changes don't break that!
 # 
 
-# Disk Operations: all GPT based
-
-# ARGS $1: the drive device i.e. /dev/sda to write GPT partition to
-fdisk_gpt () {
-echo "g
-w
-"|fdisk "$1"
-}
-
-# ARGS $1: the drive device i.e. /dev/sda to delete a partition from
-fdisk_del () {
-echo "d
-w
-"|fdisk "$1"
-}
-
-# ARGS $1: the drive device i.e. /dev/sda to create a RAID partition on
-fdisk_raid () {
-echo "n
-p
-1
-
-
-t
-29
-w
-"|fdisk "$1"
-}
-
-
-
 # ARGS $1: the text to trim whitespace and quotes out of 
 # OUTPUT : whitespace at ends trimed with single quotes removed
 trim () {

@@ -1,0 +1,93 @@
+#!/bin/sh
+
+# 
+# WARNING: This library was designed to run inside BusyBox (ash shell)
+# -------  so make sure changes don't break that!
+# 
+
+# ARGS: $1 - model string from parted i.e. ATA KINGSTON SV300S3, ATA ST3000DM001-1CH1 etc
+# OUTPUTS: the proper name of the vendor
+disk_vendor () {
+    if [ -n "`echo $1 | egrep '^(ATA) +ST'`" ]; then
+        echo SEAGATE
+    fi
+
+    if [ -n "`echo $1 | grep -i kingston`" ]; then
+        echo KINGSTON
+    fi
+
+    if [ -n "`echo $1 | grep -i ocz`" ]; then
+        echo OCZ
+    fi
+}
+
+# ARGS: $1 - model string from parted i.e. ATA KINGSTON SV300S3, ATA ST3000DM001-1CH1 etc
+# OUTPUTS: the proper name of the model
+disk_model () {
+    local vendor=$(disk_vendor "$1")
+    echo $1 | sed -e 's/ATA //g' -e 's/'$vendor'//g' -e 's/ //g' -e 's/-.*//'
+}
+
+# ARGS: $1 - simple device name after /dev/: i.e. sda
+# OUTPUTS: [ata | usb] or zero string
+disk_bus () {
+    udevadm info --query=property --path=/sys/block/$1 | grep ^ID_BUS | cut -d '=' -f 2
+}
+
+# ARGS: none
+# OUTPUTS: list of block sys devices one per line or zero string: i.e. /sys/block/sdc
+disk_ata_drives () {
+    for device in /sys/block/*; do
+        if udevadm info --query=property --path=$device | grep -q ^ID_BUS=ata; then
+            echo $device;
+        fi;
+    done
+}
+
+# ARGS: none
+# OUTPUTS: the device if any or zero string: i.e. /dev/sdc
+disk_usb_drive () {
+    for device in /sys/block/*; do
+        if udevadm info --query=property --path=$device | grep -q ^ID_BUS=usb; then
+            echo $device;
+            return
+        fi;
+    done
+}
+
+# ARGS: $1 the simple device name: i.e. sda
+# OUTPUTS: the udev device path
+disk_dev_path () {
+    udevadm info --query=property --path=/sys/block/"$1" | grep -i devpath | cut -d '=' -f 2
+}
+
+#
+# Disk Operations w/ fdisk
+#
+
+# ARGS $1: the drive device i.e. /dev/sda to write GPT partition to
+fdisk_gpt () {
+echo "g
+w
+"|fdisk "$1"
+}
+
+# ARGS $1: the drive device i.e. /dev/sda to delete a partition from
+fdisk_del () {
+echo "d
+w
+"|fdisk "$1"
+}
+
+# ARGS $1: the drive device i.e. /dev/sda to create a RAID partition on
+fdisk_raid () {
+echo "n
+p
+1
+
+
+t
+29
+w
+"|fdisk "$1"
+}

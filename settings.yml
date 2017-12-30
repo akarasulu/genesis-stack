@@ -1,0 +1,5 @@
+override: ~/.genesis-stack.yml
+mode: debug
+test-environment: vm
+hypervisor: kvm
+environment: ./environments/mock

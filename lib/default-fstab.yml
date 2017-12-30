@@ -1,0 +1,78 @@
+---
+name: root
+mountPoint: /
+type: ext4
+size: 8192
+vg: sys
+
+---
+name: boot
+mountPoint: /boot
+type: ext3
+size: 512
+primary: true
+boot: true
+
+---
+name: usr
+mountPoint: /usr
+type: ext3
+size: 8192
+vg: sys
+
+---
+name: usr_local
+mountPoint: /usr/local
+type: ext3
+size: 100
+vg: sys
+
+---
+name: opt
+mountPoint: /opt
+type: ext3
+size: 8192
+vg: sys
+
+---
+name: opt_local
+mountPoint: /opt/local
+type: ext3
+size: 100
+vg: sys
+
+---
+name: srv
+mountPoint: /srv
+type: ext3
+size: 100
+vg: data
+
+---
+name: var
+mountPoint: /var
+type: ext3
+size: 102400
+vg: data
+
+---
+name: vm
+mountPoint: /vm
+type: ext3
+size: 1024000
+vg: data
+
+---
+name: home
+mountPoint: /home
+type: ext3
+size: 102400
+vg: data
+
+---
+name: ceph
+mountPoint: /ceph
+type: ext3
+size: 102400
+vg: data
+

@@ -7,10 +7,10 @@
 
 BASE_DIR="`dirname \"$0\"`"
 BASE_DIR="`( cd \"$BASE_DIR\" && pwd )`"
-TOP_DIR="$BASE_DIR/../../"
+TOP_DIR="$BASE_DIR/.."
 
-. $TOP_DIR/machines/scripts/libs/funcs
-. $TOP_DIR/machines/scripts/libs/yaml
+. $TOP_DIR/lib/general
+. $TOP_DIR/lib/yaml
 
 function usage_info() {
     echo
@@ -35,8 +35,8 @@ envconf_dir="$TOP_DIR/environments/$envconf"
 envconf_file="$TOP_DIR/environments/$envconf/environment"
 
 if [ -n "$mach_def" ]; then
-  physical_path="$TOP_DIR/machines/physical/$mach_def"
-  virtual_path="$TOP_DIR/machines/virtual/$mach_def"
+  physical_path="$TOP_DIR/physical/$mach_def"
+  virtual_path="$TOP_DIR/virtual/$mach_def"
 
   if [ -d "$virtual_path" -a -d "$physical_path" ]; then
     echo_err "WTF! The machine exists as both physical and virtual."
@@ -154,7 +154,7 @@ elif [ -n "$3" -a -f "$3" ]; then
     -device virtio-scsi-pci,id=scsi                                             \
     $devices
 else
-installer="$TOP_DIR/machines/physical/images/debian-9.1-amd64-CD-1.iso"
+installer="$mach_def_path/installer.iso"
   qemu-system-x86_64 -enable-kvm -m $ram                                        \
     -boot d -cdrom $installer                                                   \
     -device virtio-scsi-pci,id=scsi                                             \

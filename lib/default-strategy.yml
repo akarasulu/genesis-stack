@@ -1,0 +1,742 @@
+---
+disks    : 1
+ssds     : 1
+hdds     : 0
+ceph     : false
+md0      : 'no'
+md1      : 'no'
+sys      : 'ssd'
+data     : 'ssd'
+ratio    : '3:1'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 1
+ssds     : 1
+hdds     : 0
+ceph     : true
+md0      : 'no'
+md1      : 'no'
+sys      : 'ssd'
+data     : 'ssd'
+ratio    : '3:1'
+var_home : 'ceph'
+vm       : 'ceph'
+contrib  : 'compute'
+
+---
+disks    : 1
+ssds     : 0
+hdds     : 1
+ceph     : false
+md0      : 'no'
+md1      : 'no'
+sys      : 'hdd'
+data     : 'hdd'
+ratio    : '1:3'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 1
+ssds     : 0
+hdds     : 1
+ceph     : true
+md0      : 'no'
+md1      : 'no'
+sys      : 'hdd'
+data     : 'hdd'
+ratio    : '1:3'
+var_home : 'ceph'
+vm       : 'ceph'
+contrib  : 'compute'
+
+---
+disks    : 2
+ssds     : 1
+hdds     : 1
+ceph     : false
+md0      : 'no'
+md1      : 'no'
+sys      : 'ssd'
+data     : 'hdd'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 2
+ssds     : 1
+hdds     : 1
+ceph     : true
+md0      : 'no'
+md1      : 'no'
+sys      : 'ssd'
+data     : 'hdd'
+ratio    : 'na'
+var_home : 'ceph'
+vm       : 'ceph'
+contrib  : 'compute'
+
+---
+disks    : 2
+ssds     : 2
+hdds     : 0
+ceph     : false
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:1'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 2
+ssds     : 2
+hdds     : 0
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:1'
+var_home : 'ceph'
+vm       : 'ceph'
+contrib  : 'compute'
+
+---
+disks    : 2
+ssds     : 0
+hdds     : 2
+ceph     : false
+md0      : 'rl1'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:4'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 2
+ssds     : 0
+hdds     : 2
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:9'
+var_home : 'ceph'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 3
+ssds     : 0
+hdds     : 3
+ceph     : false
+md0      : 'rl5'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:9'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 3
+ssds     : 0
+hdds     : 3
+ceph     : true
+md0      : 'rl5'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:9'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 3
+ssds     : 1
+hdds     : 2
+ceph     : false
+md0      : 'rl1'
+md1      : 'no'
+sys      : 'ssd'
+data     : 'md0'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 3
+ssds     : 1
+hdds     : 2
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'ssd'
+data     : 'md0'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 3
+ssds     : 2
+hdds     : 1
+ceph     : false
+md0      : 'rl1'
+md1      : 'no'
+sys      : 'ssd'
+data     : 'md0'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 3
+ssds     : 2
+hdds     : 1
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'ssd'
+data     : 'md0'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 3
+ssds     : 3
+hdds     : 0
+ceph     : false
+md0      : 'rl5'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:2'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 3
+ssds     : 3
+hdds     : 0
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:2'
+var_home : 'ceph'
+vm       : 'ceph'
+contrib  : 'compute'
+
+---
+disks    : 4
+ssds     : 0
+hdds     : 4
+ceph     : false
+md0      : 'rl10'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:9'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 4
+ssds     : 0
+hdds     : 4
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:19'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 4
+ssds     : 1
+hdds     : 3
+ceph     : false
+md0      : 'rl5'
+md1      : 'no'
+sys      : 'ssd'
+data     : 'md0'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 4
+ssds     : 1
+hdds     : 3
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'ssd'
+data     : 'md0'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 4
+ssds     : 2
+hdds     : 2
+ceph     : false
+md0      : 'rl0'
+md1      : 'rl1'
+sys      : 'md0'
+data     : 'md1'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 4
+ssds     : 2
+hdds     : 2
+ceph     : true
+md0      : 'rl0'
+md1      : 'rl0'
+sys      : 'md0'
+data     : 'md1'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 4
+ssds     : 3
+hdds     : 1
+ceph     : false
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'md0'
+data     : 'hdd'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 4
+ssds     : 3
+hdds     : 1
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'md0'
+data     : 'hdd'
+ratio    : 'na'
+var_home : 'ceph'
+vm       : 'ceph'
+contrib  : 'compute'
+
+---
+disks    : 4
+ssds     : 4
+hdds     : 0
+ceph     : false
+md0      : 'rl5'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:2'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 4
+ssds     : 4
+hdds     : 0
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:3'
+var_home : 'ceph'
+vm       : 'ceph'
+contrib  : 'compute'
+
+---
+disks    : 5
+ssds     : 0
+hdds     : 5
+ceph     : false
+md0      : 'rl5'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:19'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 5
+ssds     : 0
+hdds     : 5
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:25'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 5
+ssds     : 1
+hdds     : 4
+ceph     : false
+md0      : 'rl10'
+md1      : 'no'
+sys      : 'ssd'
+data     : 'md0'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 5
+ssds     : 1
+hdds     : 4
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'ssd'
+data     : 'md0'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 5
+ssds     : 2
+hdds     : 3
+ceph     : false
+md0      : 'rl0'
+md1      : 'rl5'
+sys      : 'md0'
+data     : 'md1'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 5
+ssds     : 2
+hdds     : 3
+ceph     : true
+md0      : 'rl0'
+md1      : 'rl0'
+sys      : 'md0'
+data     : 'md1'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 5
+ssds     : 3
+hdds     : 2
+ceph     : false
+md0      : 'rl0'
+md1      : 'rl1'
+sys      : 'md0'
+data     : 'md1'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 5
+ssds     : 3
+hdds     : 2
+ceph     : true
+md0      : 'rl0'
+md1      : 'rl0'
+sys      : 'md0'
+data     : 'md1'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 5
+ssds     : 4
+hdds     : 1
+ceph     : false
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md1'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 5
+ssds     : 4
+hdds     : 1
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'md0'
+data     : 'hdd'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'compute'
+
+---
+disks    : 5
+ssds     : 5
+hdds     : 0
+ceph     : false
+md0      : 'rl5'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:4'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 5
+ssds     : 5
+hdds     : 0
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'md0'
+data     : 'md0'
+ratio    : '1:5'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'compute'
+
+---
+disks    : 6
+ssds     : 0
+hdds     : 6
+ceph     : false
+md0      : 'rl10'
+md1      : 'no'
+sys      : 'md0'
+data     : 'no'
+ratio    : '1:15'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 6
+ssds     : 0
+hdds     : 6
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'md0'
+data     : 'no'
+ratio    : '1:30'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 6
+ssds     : 1
+hdds     : 5
+ceph     : false
+md0      : 'rl5'
+md1      : 'no'
+sys      : 'ssd'
+data     : 'md0'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 6
+ssds     : 1
+hdds     : 5
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'ssd'
+data     : 'md0'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 6
+ssds     : 2
+hdds     : 4
+ceph     : false
+md0      : 'rl0'
+md1      : 'rl10'
+sys      : 'md0'
+data     : 'md1'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 6
+ssds     : 2
+hdds     : 4
+ceph     : true
+md0      : 'rl0'
+md1      : 'rl0'
+sys      : 'md0'
+data     : 'md1'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 6
+ssds     : 3
+hdds     : 3
+ceph     : false
+md0      : 'rl5'
+md1      : 'rl5'
+sys      : 'md0'
+data     : 'md1'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 6
+ssds     : 3
+hdds     : 3
+ceph     : true
+md0      : 'rl0'
+md1      : 'rl0'
+sys      : 'md0'
+data     : 'md1'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 6
+ssds     : 4
+hdds     : 2
+ceph     : false
+md0      : 'rl0'
+md1      : 'rl1'
+sys      : 'md0'
+data     : 'md1'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 6
+ssds     : 4
+hdds     : 2
+ceph     : true
+md0      : 'rl0'
+md1      : 'rl0'
+sys      : 'md0'
+data     : 'md1'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'storage'
+
+---
+disks    : 6
+ssds     : 5
+hdds     : 1
+ceph     : false
+md0      : 'rl5'
+md1      : 'no'
+sys      : 'md0'
+data     : 'hdd'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
+---
+disks    : 6
+ssds     : 5
+hdds     : 1
+ceph     : true
+md0      : 'rl0'
+md1      : 'no'
+sys      : 'md0'
+data     : 'hdd'
+ratio    : 'na'
+var_home : 'data'
+vm       : 'ceph'
+contrib  : 'compute'
+
+---
+disks    : 6
+ssds     : 6
+hdds     : 0
+ceph     : false
+md0      : 'rl5'
+md1      : 'no'
+sys      : 'md0'
+data     : 'no'
+ratio    : '1:5'
+var_home : 'data'
+vm       : 'data'
+contrib  : 'compute'
+
