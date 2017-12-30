@@ -1,0 +1,20 @@
+#
+# The control host should be mapped to the IP address based on environment:
+#
+#   - Home => External IP Address
+#   - Work => Internal IP Address
+#
+# SSHD is running both on port 22 and 10000 to enable internal and external
+# access to work transparently
+#
+
+Host control
+  HostName control
+  Port $JUMP_PORT
+  User infra
+
+Host iso-builder
+  HostName image-builder
+  User infra
+  ProxyCommand ssh infra@control netcat -w 120 %h %p
+
