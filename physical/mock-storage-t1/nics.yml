@@ -1,0 +1,10 @@
+--- 
+deviceId: 'enp3s0'
+devicePath: 'pci@0000:03:00.0'
+model: 'RTL8111/8168/8411'
+
+---
+deviceId: 'enp4s0'
+devicePath: 'pci@0000:04:00.0'
+model: 'RTL8111/8168/8411'
+

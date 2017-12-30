@@ -1,0 +1,48 @@
+---
+deviceId: 'sda'
+vendor: 'KINGSTON'
+family: 'ssdnow'
+model: 'SV300S3'
+capacity: 240000
+is_rotational: false
+
+---
+deviceId: 'sdb'
+vendor: 'KINGSTON'
+family: 'ssdnow'
+model: 'SV300S3'
+capacity: 240000
+is_rotational: false
+
+---
+deviceId: 'sdc'
+vendor: 'SEAGATE'
+family: 'barracuda'
+model: 'ST3000DM001'
+capacity: 3001000
+is_rotational: true
+
+---
+deviceId: 'sdd'
+vendor: 'SEAGATE'
+family: 'barracuda'
+model: 'ST3000DM001'
+capacity: 3001000
+is_rotational: true
+
+---
+deviceId: 'sde'
+vendor: 'SEAGATE'
+family: 'barracuda'
+model: 'ST3000DM001'
+capacity: 3001000
+is_rotational: true
+
+---
+deviceId: 'sdf'
+vendor: 'SEAGATE'
+family: 'barracuda'
+model: 'ST3000DM001'
+capacity: 3001000
+is_rotational: true
+

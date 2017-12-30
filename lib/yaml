@@ -1,0 +1,138 @@
+#!/bin/sh
+
+# 
+# WARNING: This library was designed to run inside BusyBox (ash shell)
+# -------  so make sure changes don't break that!
+# 
+
+# Disk Operations: all GPT based
+
+# ARGS $1: the drive device i.e. /dev/sda to write GPT partition to
+fdisk_gpt () {
+echo "g
+w
+"|fdisk "$1"
+}
+
+# ARGS $1: the drive device i.e. /dev/sda to delete a partition from
+fdisk_del () {
+echo "d
+w
+"|fdisk "$1"
+}
+
+# ARGS $1: the drive device i.e. /dev/sda to create a RAID partition on
+fdisk_raid () {
+echo "n
+p
+1
+
+
+t
+29
+w
+"|fdisk "$1"
+}
+
+
+
+# ARGS $1: the text to trim whitespace and quotes out of 
+# OUTPUT : whitespace at ends trimed with single quotes removed
+trim () {
+    echo "$1" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e "s/'//g"
+}
+
+# ARGS $1: the YAML file containing several objects separated by '---' lines
+#          if not provided will try to use the YAML_FILE variable
+# OUTPUT : an integer showing the number of YAML objects
+count () {
+  file="$1"
+
+  if [ -z "$file" -a -n "$YAML_FILE" ]; then
+    file="$YAML_FILE"
+  fi
+
+  grep '\-\-\-' "$file" | wc -l
+}
+
+# ARGS $1: the YAML property line ('$key: $value') to strip the key from
+# OUTPUT : the YAML property identifier, the key
+key () {
+    echo "$1" | sed -e 's/://' | cut -d ' ' -f 1
+}
+
+# ARGS $1: the YAML property line ('$key: $value') to strip the value from
+# OUTPUT : the YAML property value
+value () {
+    echo "$1" | sed -e 's/://' | cut -d ' ' -f 2
+}
+
+# How it works and why?
+# -----------------------------
+
+# These yaml files are not huge and never will be. We can afford to keep the
+# code really simple, which we need to do especially since we're in busybox. 
+
+# It might seem wasteful to scan the entire file, to advance to the ith record
+# and extract it into the environment as vars every time. For intense apps, 
+# sure, but in this trivial case who cares. Simple is better and this works.
+
+# ARGS $1: the i-th object (with zero based indexing) to extract from the file
+# ARGS $2: the YAML file containing several objects separated by '---' lines
+#          if not provided will try to use the YAML_FILE variable
+# OUTPUT : sets global variables with the same name as the key to the value
+rec () {
+  rec="$1"
+  file="$2"
+
+  if [ -z "$file" -a -n "$YAML_FILE" ]; then
+    file="$YAML_FILE"
+  fi
+
+  local line
+  local total=$(count $file)
+  local ii=-1
+  while IFS= read -r line <&3; do
+    rec_start=$(echo $line | grep '\-\-\-' | wc -l)
+    in_target_rec=0
+
+    if [ $rec_start -eq 1 ]; then
+      ii=$((ii + 1))
+      in_target_rec=1
+    elif [ -z "$line" ]; then
+      continue
+    elif [ $rec -eq $ii ]; then
+      key=$(key "$line")
+      value=$(value "$line")
+      eval "$key"="$value"
+    fi
+
+  done 3< "$file"
+}
+
+# ARGS $1: the key to query records for set to a value
+# ARGS $2: the value of the key  to query records for
+# ARGS $3: the YAML file containing several objects separated by '---' lines
+#          if not provided will try to use the YAML_FILE variable
+# OUTPUT : outputs all the matching YAML objects in the file
+query () {
+    echo 'Who wants to implement me?'
+}
+
+# Usage Example
+# ------------------------------------------
+#
+# echo 'There are '$(count "$2")' YAML objects in file '"$2"
+# echo 'Extracting the '"$1"'-th record and setting vars in the environment.'
+# 
+# rec $1 $2
+#  
+# echo 
+# echo 'YAML object #'"$1"':'
+# echo '-------------------------------'
+# echo 'deviceId      = '$deviceId
+# echo 'vendor        = '$vendor
+# echo 'model         = '$model
+# echo 'capacity      = '$capacity
+# echo 'is_rotational = '$is_rotational
+# echo
