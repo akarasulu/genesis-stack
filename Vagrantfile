@@ -130,6 +130,10 @@ EOF
     # sudo su -c '$1' vagrant -- $CMD
   SHELL
 
+  # This will go away, a shell script will trigger these builds
+  # for all the environment machine definitions. Configuration
+  # files (preseed, pre, post installation files) will be generated
+  # then the iso will be generated.
   config.vm.provision 'shell', 
     env: {
       "ACNG_HOST" => ENV['ACNG_HOST'],

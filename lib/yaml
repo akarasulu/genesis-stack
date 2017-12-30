@@ -51,8 +51,13 @@ value () {
 #          if not provided will try to use the YAML_FILE variable
 # OUTPUT : sets global variables with the same name as the key to the value
 rec () {
-  rec="$1"
-  file="$2"
+  if [ -n "$1" ]; then
+    local rec="$1"
+  else
+     rec=0
+  fi
+
+  local file="$2"
 
   if [ -z "$file" -a -n "$YAML_FILE" ]; then
     file="$YAML_FILE"

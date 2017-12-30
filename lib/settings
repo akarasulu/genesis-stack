@@ -1,0 +1,15 @@
+#!/bin/bash
+
+BASE_DIR="`dirname \"$0\"`"
+BASE_DIR="`( cd \"$BASE_DIR\" && pwd )`"
+TOP_DIR="$BASE_DIR/.."
+
+. $TOP_DIR/lib/general
+. $TOP_DIR/lib/yaml
+
+# Pulls in environments var which we need
+rec 0 $TOP_DIR/settings.yml
+if [ -f "$overrides" ]; then
+  rec 0 "$overrides"
+fi
+
