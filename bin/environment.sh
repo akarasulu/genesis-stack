@@ -1,3 +1,18 @@
+#!/bin/bash
+
+# Usage: environment.sh <env_name>
+# Generates files for the environment from the yaml file if they do not exist:
+#  - the environment file
+#  - the hosts file
+#  - the ssh_config file
+#  - the authorized_keys file
+#
+# If the files already exist, they are intelligently merged. If debug mode is
+# enabled then values are merged in from environment defaults.
+
+# ARG $1: the name of the environment
+
+
 # Some rules:
 #   - Set passwords in shell before your build: avoids storing it here!
 
@@ -63,6 +78,12 @@ APPROX_PORT='9999'
 ACNG_HOST='acng'
 ACNG_PORT='3142'
 
+# HTTP Server
+HTTP_HOST='www'
+HTTP_PORT='80'
+
+NTP_HOST='ntp'
+
 # CDN hosts prefixed to this for sysnet, dev, and master
 CDN_HOST_BASE='cdn'
 
@@ -79,5 +100,6 @@ JUMP_HOST='jump'
 JENKINS_HOST='jenkins'
 
 # Place to put and get infrastructure team keys
-INFRA_KEYS_URL="http://id/keys/$INFRA_ACCOUNT"
-NONINFRA_KEYS_URL='http://id/keys/$NONINFRA_ACCOUNT'
+KEYS_HOST='keys'
+KEYS_PORT='80'
+KEYS_PATH='/authorized_keys'

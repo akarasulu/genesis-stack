@@ -116,41 +116,16 @@ EOF
     # prepare iso build environment
     apt-get build-dep -y debian-installer
     apt-get install -y fakeroot
-
-    # apply patch to modify installer
-
-    # This was for simple-cdd
-    # cd /vagrant
-    # if [ -f /vagrant/tmp/mirror/db/lockfile ]; then
-    #   rm /vagrant/tmp/mirror/db/lockfile
-    # fi 
-
-    # Not using simple-cdd anymore
-    # CMD='echo build-simple-cdd --debian-mirror '$APPROX_URL
-    # sudo su -c '$1' vagrant -- $CMD
   SHELL
 
-  # This will go away, a shell script will trigger these builds
-  # for all the environment machine definitions. Configuration
-  # files (preseed, pre, post installation files) will be generated
-  # then the iso will be generated.
-  config.vm.provision 'shell', 
-    env: {
-      "ACNG_HOST" => ENV['ACNG_HOST'],
-      "ACNG_PORT" => ENV['ACNG_PORT'],
-      "APPROX_HOST" => ENV['APPROX_HOST'],
-      "APPROX_PORT" => ENV['APPROX_PORT']
-      }, privileged: false, inline: <<-SHELL
+  config.vm.provision 'file', source: '.bashrc', destination: '.bashrc'
+  config.vm.provision 'file', source: '.bash_logout', destination: '.bash_logout'
+  config.vm.provision 'file', source: '.profile', destination: '.profile'
+
+  config.vm.provision 'shell', privileged: false, inline: <<-SHELL
+    # Setup the debian installer sources
     apt-get source -y debian-installer
     mv `find . -maxdepth 1 -type d -regex '^./debian-installer-2.*'` installer
     patch -R -p0 < /vagrant/installer.patch
-    cd installer/build
-    echo 'PRESEED=/vagrant/mock-storage-t1/preseed.cfg' > config/local
-    echo 'USE_UDEBS_FROM=stretch' >> config/local
-    fakeroot make rebuild_netboot
-    
-    if [ $? -eq 0 ]; then
-      cp dest/netboot/mini.iso /vagrant/mock-storage-t1/installer.iso
-    fi
   SHELL
 end
