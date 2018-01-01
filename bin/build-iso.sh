@@ -24,13 +24,13 @@ TOP_DIR="$BASE_DIR/.."
 . $TOP_DIR/lib/yaml
 . $TOP_DIR/lib/settings
 . $TOP_DIR/lib/load_env_mach "$1" "$2"
+. $TOP_DIR/lib/vm
+
+. $TOP_DIR/bin/environment.sh "$1"
+. $TOP_DIR/bin/ssh-config.sh "$1"
 . $TOP_DIR/bin/stretch-preseed.sh "$1" "$2"
 . $TOP_DIR/bin/postinst.sh "$1" "$2"
 . $TOP_DIR/bin/postinst-in-target.sh "$1" "$2"
 
-if [ -n "$(vagrant status | grep 'not created')" ]; then
-  vagrant up --provider "$vagrant_provider"
-fi
-
-
+vm_run
 vagrant ssh -c "/vagrant/bin/vagrant-build.sh $env_name $mach_def"

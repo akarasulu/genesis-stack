@@ -9,7 +9,9 @@ TOP_DIR="$BASE_DIR/.."
 
 # Pulls in environments var which we need
 rec 0 $TOP_DIR/settings.yml
-if [ -f "$overrides" ]; then
-  rec 0 "$overrides"
+overrides="$(eval echo $overrides)"
+if [ -f "$overrides/settings.yml" ]; then
+  rec 0 "$overrides/settings.yml"
 fi
 
+environments="$(eval echo $environments)"

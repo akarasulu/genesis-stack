@@ -1,6 +1,8 @@
 --- 
-overrides: '~/.genesis-stack.yml'
-debug: 'enabled'
+overrides: '~/.genesis-stack'
+outside: 'true'
 hypervisor: 'kvm'
 vagrant_provider: 'libvirt'
 environments: 'environments'
+add_authorized_keys: '~/.ssh/id_rsa.pub'
+

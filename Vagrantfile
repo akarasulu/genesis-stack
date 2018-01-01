@@ -1,9 +1,33 @@
 vm_memory = 8192
 vm_cpus   = 4
 
+# Need to figure out how to handle ACNG/APPROX
+# We provide to this host, yet expect it to server
+# As a caching proxy server too?
+acng_port = 13143
+approx_port = 10001
+configs_port = 11888
+
+# Read settings yaml, extract the environments directory, and
+# mount to /environments as vagrant user which nginx runs as
+ENVS_PATH='/environments'
+DEFAULT_ROOT='/var/www/html'
+env_dir = "#{Dir.pwd}" + ENVS_PATH     # default to environments inside
+settings = File.expand_path('~/.genesis-stack/settings.yml')
+if File.exist?(settings)
+  temp = YAML.load_file(settings)
+  unless temp['environments'].nil? 
+    env_dir = File.expand_path(temp['environments'])
+  end
+end
+
 Vagrant.configure("2") do |config|
   config.vm.box = "debian/stretch64"
   config.vm.hostname = 'iso-builder'
+
+  config.vm.network "forwarded_port", guest: 80, host: configs_port
+  config.vm.network "forwarded_port", guest: 3142, host: acng_port
+  config.vm.network "forwarded_port", guest: 9999, host: approx_port
 
   ["vmware_workstation", "vmware_fusion"].each do |vmware_provider|
     config.vm.provider(vmware_provider) do |vmware|
@@ -13,6 +37,7 @@ Vagrant.configure("2") do |config|
       vmware.vmx["numvcpus"] = vm_cpus
       vmware.vmx["vhv.enable"] = "TRUE"
       config.vm.synced_folder './', '/vagrant'
+      config.vm.synced_folder env_dir, DEFAULT_ROOT + ENVS_PATH
     end
   end
 
@@ -20,6 +45,7 @@ Vagrant.configure("2") do |config|
     vb.memory = vm_memory
     vb.cpus = vm_cpus
     config.vm.synced_folder './', '/vagrant'
+    config.vm.synced_folder env_dir, DEFAULT_ROOT + ENVS_PATH
   end
 
   config.vm.provider :libvirt do |libvirt|
@@ -33,6 +59,7 @@ Vagrant.configure("2") do |config|
     libvirt.nested = 'true'
     libvirt.random_hostname = 'iso-builder'
     config.vm.synced_folder './', '/vagrant', type: 'nfs', nfs_udp: false, nfs_version: 4
+    config.vm.synced_folder env_dir, DEFAULT_ROOT + ENVS_PATH, type: 'nfs', nfs_udp: false, nfs_version: 4
     # config.vm.synced_folder './', '/vagrant', type: '9p', disabled: false, accessmode: "squash", owner: "1000"
   end
 
@@ -44,6 +71,7 @@ Vagrant.configure("2") do |config|
       "APPROX_PORT" => ENV['APPROX_PORT']
       }, inline: <<-SHELL
     
+    ## Need to make this conditional
     ACNG_URL="http://$ACNG_HOST:$ACNG_PORT"
     APPROX_URL="http://$APPROX_HOST:$APPROX_PORT/debian/"
 
@@ -108,8 +136,8 @@ EOF
     # apt-get -y install debhelper devscripts
 
     # basics
-    # apt-get -y install openssh-server ntp curl net-tools dnsutils nginx apt-cacher-ng approx
-    
+    apt-get -y install openssh-server ntp curl net-tools dnsutils nginx apt-cacher-ng approx ntp ntpdate
+
     # extras for virtualization (testing inside the box)
     # apt-get -y install qemu-kvm libvirt-daemon-system bridge-utils
 

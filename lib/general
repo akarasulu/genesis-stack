@@ -8,11 +8,19 @@ TOP_DIR="$BASE_DIR/.."
 # Functions
 #
 
+upper () {
+  echo "$1" | tr '[:lower:]' '[:upper:]'
+}
+
+lower () {
+  echo "$1" | tr '[:upper:]' '[:lower:]'
+}
+
 trim () {
     echo "$1" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
 }
 
-echo_err () {
+err () {
    echo "[ERROR] $@" >&2
 }
 
@@ -21,7 +29,7 @@ echo_err () {
 in_mb () {
     # values from parted are in GB so let us confirm
     if [ -z "echo $1 | grep GB" ]; then
-        echo_err "Failed to detect units in input size: $1"
+        err "Failed to detect units in input size: $1"
         exit 1
     fi
 

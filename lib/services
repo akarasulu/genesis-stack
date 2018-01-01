@@ -1,0 +1,88 @@
+#!/bin/sh
+
+# Functions to test for the availability of services
+
+# ARG $1: dns server to ask
+# ARG $2: service name to query
+# OUTPUT: ip addr of the service if present, nother otherwise
+find_dns () {
+  nslookup "$2" "$1" | grep -v "$1"'#53' | \
+    egrep '^Address:[[:space:]]+' | sed -e 's/ //g' | cut -d ':' -f 2
+}
+
+# ARG $1: dns server to ask
+# ARG $2: service name to query (i.e. _acng._tcp.example.com)
+# OUTPUT: the port and hostname of the machines providing the service (one per line)
+find_service () {
+  local dns="$1"
+  local srv="$2"
+  found="$(nslookup -type=SRV $srv $dns | grep $srv)"
+  nslookup -type=SRV _acng._tcp.upstairs 172.16.1.1 | \
+    grep "$srv" | sed -e "s/^$srv[[:space:]]\+service = //" -e 's/\.$//' | \
+    cut -d ' ' -f3,4
+}
+
+# ARG $1: the host
+# ARG $2: the port
+# OUTPUT: 'up' string if running, 'down' if not
+check_approx () {
+  echo 'up'
+}
+
+# ARG $1: the host
+# ARG $2: the port
+# OUTPUT: 'up' string if running, 'down' if not
+check_acng () {
+  local host="$1"
+  local port="$2"
+
+  # try the default acng port if not provided
+  if [ -z "$port" ]; then
+    port='3142'
+  fi
+
+  local result="$(wget -t 1 --timeout=2 -qO- 'http://'$host':'$port'/acng-report.html' | grep 'Transfer statistics')"
+  if [ -n "$result" ]; then echo 'up'; else echo 'down'; fi
+}
+
+# ARG $1: the host
+# ARG $2: the port
+# OUTPUT: 'up' string if running, 'down' if not
+check_configs () {
+  local host="$1"
+  local port="$2"
+
+  # try the default web port if not provided
+  if [ -z "$port" ]; then
+    port='80'
+  fi
+
+  # status file contains up string so will output up if success
+  wget -t 1 --timeout=2 -qO- 'http://'$host':'$port'/environments/status'
+  # if not successful output down
+  if [ $? -ne 0 ]; then echo 'down'; fi
+}
+
+# ARG $1: the host
+# ARG $2: the port
+# OUTPUT: 'up' string if running, 'down' if not
+check_cdn () {
+  local host="$1"
+  local port="$2"
+
+  # try the default web port if not provided
+  if [ -z "$port" ]; then
+    port='8338'
+  fi
+
+  wget -t 1 --timeout=2 -qO- --no-check-certificate 'https://'$host':'$port > /dev/null
+  if [ $? -ne 0 ]; then echo 'down'; else echo 'up'; fi
+}
+
+# ARG $1: the host
+# OUTPUT: 'up' string if running, 'down' if not
+check_ntp () {
+  local host="$1"
+  ntpdate -q "$1" 2> /dev/null
+  if [ $? -ne 0 ]; then echo 'down'; else echo 'up'; fi
+}

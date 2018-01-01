@@ -1,0 +1,39 @@
+#!/bin/bash
+
+BASE_DIR="`dirname \"$0\"`"
+BASE_DIR="`( cd \"$BASE_DIR\" && pwd )`"
+TOP_DIR="$BASE_DIR/.."
+
+. $TOP_DIR/lib/general
+. $TOP_DIR/lib/yaml
+. $TOP_DIR/lib/settings
+
+# ARGS: none
+# Returns 'running', 'shutoff', 'not created'  
+function vm_status() {
+  vagrant status default | \
+    egrep '^default[[:space:]]+(running|not created|shutoff)[[:space:]]+\(.*\)' | \
+    sed -e 's/^default[[:space:]]*//' -e 's/ (.*)//'
+}
+
+# ARGS: none
+# Returns: nothing, just starts the vm if stopped
+function vm_run() {
+  vm_state=`vm_status`
+
+  if [ "$vm_state" != "running" ]; then
+    if [ "$vm_state" == "shutoff" ]; then
+      vagrant up
+    elif [ "$vm_state" == "not created" ]; then
+      vagrant up --provider "$vagrant_provider"
+    fi
+  fi
+}
+
+# ARGS: none
+# Returns: nothing, just starts the vm if stopped
+function vm_ip() {
+    vm_run
+    vagrant ssh -c '/vagrant/bin/get-ip.sh'
+}
+

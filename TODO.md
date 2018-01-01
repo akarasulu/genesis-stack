@@ -2,10 +2,14 @@
 
 Overrides for local build and test settings in debug mode. These overrides
 should only be used when in debug mode or when explicitly requested by yml
-fields with the 'override' text.
+fields with the '$override', '$local', or '$vm' text.
+
+If name instead of IP then check DNS for name resolution.
 
 - .genesis-stack/settings.yml
 - .genesis-stack/environments/...
+
+Generate the environment and hosts file.
 
 - Overrides for debug mode (local env vs. production env usage)
   - Network settings

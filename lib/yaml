@@ -5,6 +5,26 @@
 # -------  so make sure changes don't break that!
 # 
 
+# ARGS $1: the variable value to check for substitution variables
+# OUTPUTS: 'local' if $local ONLY is used,
+#          'vm' if $vm ONLY is used,
+#          'local_first' if both are used but $local is first,
+#          'vm_first' if both are used by $vm is first,
+#          'none' if none are present
+subs () {
+  if [ -n "$(echo "$1" | egrep '^\$local')" -a -n "$(echo "$1" | grep '\$vm')" ]; then
+    echo 'local_first'
+  elif [ -n "$(echo "$1" | grep '\$local')" -a -n "$(echo "$1" | egrep '^\$vm')" ]; then
+    echo 'vm_first'
+  elif [ -n "$(echo "$1" | grep '\$local')" ]; then
+    echo 'local'
+  elif [ -n "$(echo "$1" | grep '\$vm')" ]; then
+    echo 'vm'
+  else
+    echo 'none'
+  fi
+}
+
 # ARGS $1: the text to trim whitespace and quotes out of 
 # OUTPUT : whitespace at ends trimed with single quotes removed
 trim () {
@@ -27,13 +47,13 @@ count () {
 # ARGS $1: the YAML property line ('$key: $value') to strip the key from
 # OUTPUT : the YAML property identifier, the key
 key () {
-    echo "$1" | sed -e 's/://' | cut -d ' ' -f 1
+    echo "$1" | cut -d ':' -f 1
 }
 
 # ARGS $1: the YAML property line ('$key: $value') to strip the value from
 # OUTPUT : the YAML property value
 value () {
-    echo "$1" | sed -e 's/://' | cut -d ' ' -f 2
+    echo "$1" | cut -d ':' -f 2
 }
 
 # How it works and why?
@@ -77,8 +97,10 @@ rec () {
       continue
     elif [ $rec -eq $ii ]; then
       key=$(key "$line")
+      key=$(trim "$key")
       value=$(value "$line")
-      eval "$key"="$value"
+      value=$(trim "$value")
+      eval "$key"=\"$value\"
     fi
 
   done 3< "$file"

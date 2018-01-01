@@ -33,7 +33,7 @@ if [ -z "$DEBUG" ]; then
 fi
 
 ## TODO can enable per machine definition keys file?
-AUTHORIZED_KEYS_URL='http://'$KEYS_HOST':'$KEYS_PORT'/'$env_name$KEYS_PATH
+BASE_URL='http://'$KEYS_HOST':'$KEYS_PORT'/environments/'$env_name'/'$mach_def
 
 ENABLE_NETCON="$DEBUG"
 
@@ -50,7 +50,7 @@ cat >> $preseed_path <<-EOF
 d-i anna/choose_modules string network-console
 d-i preseed/early_command string anna-install network-console
 d-i network-console/password-disabled boolean true
-d-i network-console/authorized_keys_url string $AUTHORIZED_KEYS_URL
+d-i network-console/authorized_keys_url string $BASE_URL/effective.keys
 
 EOF
 fi
@@ -168,12 +168,12 @@ EOF
 cat >> $preseed_path <<-EOF
 # Setup for Post Installation Tasks: outside and inside the target
 d-i preseed/late_command string \
-wget http://$HTTP_HOST:$HTTP_PORT/$env_name/$mach_def/postinst; \
+wget $BASE_URL/postinst; \
 chmod +x ./postinst; \
 in-target /postinst; \
 rm -f ./postinst; \
 cd /target; \
-wget http://$HTTP_HOST:$HTTP_PORT/$env_name/$mach_def/postinst-in-target; \
+wget $BASE_URL/postinst-in-target; \
 in-target /postinst-in-target; \
 rm -f ./postinst-in-target;
 EOF
