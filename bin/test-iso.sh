@@ -54,7 +54,7 @@ while [ $ii -lt 6 ]; do
   ((ii++))
 done
 
-index=0
+index=1
 devices=''
 for ii in "${!drives[@]}"; do
   img="${drives[$ii]}"
@@ -87,11 +87,16 @@ elif [ -n "$3" -a -f "$3" ]; then
   qemu-system-x86_64 -enable-kvm -m $ram                                        \
     -boot d -cdrom $installer                                                   \
     -device virtio-scsi-pci,id=scsi                                             \
-    $devices
+    $devices -net nic -net bridge,br=br0 
 else
-installer="$mach_def_path/installer.iso"
-  qemu-system-x86_64 -enable-kvm -m $ram                                        \
-    -boot d -cdrom $installer                                                   \
+usb_image="$mach_def_path/usb-drive.qcow2"
+usb_dev='sdz'
+
+  qemu-system-x86_64 -enable-kvm -m $ram -usb                                   \
+    -boot menu=on                                                               \
+    -drive if=none,id=$usb_dev,file=$usb_image,boot=on,index=0                  \
+    -device usb-ehci,id=ehci                                                    \
+    -device usb-storage,bus=ehci.0,drive=$usb_dev                               \
     -device virtio-scsi-pci,id=scsi                                             \
     $devices -net nic -net bridge,br=br0                                        \
     -fsdev local,security_model=passthrough,id=fsdev0,path=$TOP_DIR             \
