@@ -160,8 +160,17 @@ d-i grub-installer/bootdev string default
 d-i finish-install/reboot_in_progress note
 
 # Packages - TODO should cascade additively: (1) default packages, (2) env packages, (2) machine packages
-d-i pkgsel/update-policy select none
-d-i pkgsel/include string openssh-server python ntp curl net-tools dnsutils qemu-kvm libvirt0 bridge-utils
+# tasksel tasksel/first multiselect minimal
+tasksel tasksel/first multiselect none
+
+# ntp curl net-tools dnsutils
+d-i pkgsel/include string openssh-server
+
+d-i pkgsel/upgrade select none
+popularity-contest popularity-contest/participate boolean false
+
+d-i hw-detect/load_firmware boolean true
+
 
 EOF
 
@@ -170,7 +179,7 @@ cat >> $preseed_path <<-EOF
 d-i preseed/late_command string \
 wget $BASE_URL/postinst; \
 chmod +x ./postinst; \
-in-target /postinst; \
+./postinst; \
 rm -f ./postinst; \
 cd /target; \
 wget $BASE_URL/postinst-in-target; \

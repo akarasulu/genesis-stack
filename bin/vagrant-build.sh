@@ -25,10 +25,16 @@ TOP_DIR="$BASE_DIR/.."
 . $TOP_DIR/lib/settings
 . $TOP_DIR/lib/load_env_mach "$1" "$2"
 
-    
+rm -rf installer
+apt-get source -y debian-installer
+mv `find . -maxdepth 1 -type d -regex '^./debian-installer-2.*'` installer
+
+patch -R -p0 < "/var/www/html/environments/$env_name/$mach_def/installer.patch"
+
 cd installer/build
-echo 'PRESEED=/vagrant/environments/'$env_name/$mach_def'/preseed.cfg' > config/local
+echo 'PRESEED=/var/www/html/environments/'$env_name/$mach_def'/preseed.cfg' > config/local
 echo 'USE_UDEBS_FROM=stretch' >> config/local
+
 fakeroot make rebuild_netboot
 
-cp 'dest/netboot/mini.iso' "/vagrant/environments/$env_name/$mach_def/installer.iso"
+cp 'dest/netboot/mini.iso' "/var/www/html/environments/$env_name/$mach_def/installer.iso"

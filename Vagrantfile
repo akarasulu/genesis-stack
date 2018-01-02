@@ -25,9 +25,17 @@ Vagrant.configure("2") do |config|
   config.vm.box = "debian/stretch64"
   config.vm.hostname = 'iso-builder'
 
-  config.vm.network "forwarded_port", guest: 80, host: configs_port
-  config.vm.network "forwarded_port", guest: 3142, host: acng_port
-  config.vm.network "forwarded_port", guest: 9999, host: approx_port
+  config.vm.network :public_network, :dev => "br0", :mode => "bridge", :type => "bridge"
+
+  # config.vm.network :private_network, :libvirt__tunnel_type => 'client',
+  #   :libvirt__tunnel_ip => '172.16.1.20', :libvirt__tunnel_port => '11111'
+
+  config.vm.network "forwarded_port", guest: 80, host: configs_port, 
+    host_ip: '*', adapter: 'br0', gateway_ports: true
+  config.vm.network "forwarded_port", guest: 3142, host: acng_port, 
+    host_ip: "0.0.0.0", adapter: 'br0', gateway_ports: true
+  config.vm.network "forwarded_port", guest: 9999, host: approx_port, 
+    host_ip: "0.0.0.0", adapter: 'br0', gateway_ports: true
 
   ["vmware_workstation", "vmware_fusion"].each do |vmware_provider|
     config.vm.provider(vmware_provider) do |vmware|
@@ -44,6 +52,7 @@ Vagrant.configure("2") do |config|
   config.vm.provider :virtualbox do |vb|
     vb.memory = vm_memory
     vb.cpus = vm_cpus
+
     config.vm.synced_folder './', '/vagrant'
     config.vm.synced_folder env_dir, DEFAULT_ROOT + ENVS_PATH
   end
@@ -149,11 +158,4 @@ EOF
   config.vm.provision 'file', source: '.bashrc', destination: '.bashrc'
   config.vm.provision 'file', source: '.bash_logout', destination: '.bash_logout'
   config.vm.provision 'file', source: '.profile', destination: '.profile'
-
-  config.vm.provision 'shell', privileged: false, inline: <<-SHELL
-    # Setup the debian installer sources
-    apt-get source -y debian-installer
-    mv `find . -maxdepth 1 -type d -regex '^./debian-installer-2.*'` installer
-    patch -R -p0 < /vagrant/installer.patch
-  SHELL
 end

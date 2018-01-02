@@ -183,7 +183,6 @@ JUMP_HOST="$vm_addr"
 JENKINS_HOST="$vm_addr"
 KEYS_HOST="$configs_host"
 KEYS_PORT="$configs_port"
-KEYS_PATH="$keys_path"
 
 EOF
 

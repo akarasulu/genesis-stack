@@ -1,5 +1,28 @@
 # TODO List
 
+## Critical Problems
+
+- add partitioning code
+
+## Major Problems
+
+- [test-iso.sh] with boot option does not have connectivity
+- [stretch-preseed.sh] infra password is not getting set in preseed
+- [test-iso.sh] produce usb image from iso and test boot with it
+
+## Minor Problems
+
+- [minor] test-iso.sh accidentally overwritting when trying to boot: warn before overwrite
+- [minor] add kernel boot options to menu.cfg to prevent language and keymap questions
+- [minor] add approx settings in VM for both debian and ubuntu
+- [minor] documentation
+- [minor] setup.sh in root of prj, tell if things missing, how to install
+
+- setup mock tests for build
+  - try acer laptop as experiment
+- add logic to avoid windows partitions?
+- add config logic not to touch existing raid or lvm partitions with data
+
 Overrides for local build and test settings in debug mode. These overrides
 should only be used when in debug mode or when explicitly requested by yml
 fields with the '$override', '$local', or '$vm' text.

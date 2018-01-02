@@ -14,4 +14,8 @@ if [ -f "$overrides/settings.yml" ]; then
   rec 0 "$overrides/settings.yml"
 fi
 
-environments="$(eval echo $environments)"
+if [ "$USER" == "vagrant" -a "$(hostname)" == "iso-builder" ]; then
+  environments='/var/www/html/environments'
+else
+  environments="$(eval echo $environments)"
+fi
