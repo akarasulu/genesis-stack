@@ -28,4 +28,10 @@ echo "Generating postinst-in-target file ..."
 echo "Checking and starting virtual machine ..."
 vm_run
 echo "Building ISO installer ..."
+
+pushd .
+cd $TOP_DIR
 vagrant ssh -c "/vagrant/bin/vagrant-build.sh $env_name $mach_def"
+popd
+
+$TOP_DIR add-partition.sh "$1" "$2"
