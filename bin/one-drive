@@ -1,0 +1,81 @@
+#
+# Presumes a single drive exists on the system. Might be a large HDD or a small
+# SSD. Regardless the drive is:
+#
+# 1. the boot drive with the first primary partition being the boot partition
+# 2. sys and data vgs share this drive in separate partitions: ratio is used
+# 3. there will be a final total of 3 primary partitions on this drive
+#    - boot primary existing
+#    - sys primary created with size based on ratio
+#    - data primary created with size based on ratio
+
+# Expected Variables (exp_)
+# --------------------------
+#
+# boot_size
+# 
+# exp_total_drive_count
+# exp_drive_capacity (in MB)
+# exp_drive_dev_id (short deviceId i.e. sda, sdb, sdc etc)
+#
+
+debug_step postinst_parts_one_drive_checks
+
+act_total_drive_count=$(list_drives | wc -w)
+
+if [ $act_total_drive_count -ne $exp_total_drive_count ]; then
+  err "The expected drive count $exp_total_drive_count does not equal the discovered drive count of $act_total_drive_count"
+  debug_step postinst_parts_one_drive_finish
+  exit 1
+fi
+
+if [ $act_total_drive_count -ne 1 ]; then
+  err "The total drive count should be 1 but is $act_total_drive_count"
+  debug_step postinst_parts_one_drive_finish
+  exit 2
+fi
+
+# Should be just one device i.e. sda
+act_drive_dev_id=$(list_drives)
+
+# drive_capacity returns parted_devices bytes capacity, need to turn into MB
+act_drive_capacity=$(drive_capacity $act_drive_dev_id) 
+act_drive_capacity=$((act_drive_capacity / 1024 / 1024))
+
+if [ $(size_difference $exp_drive_capacity $act_drive_capacity) -eq 0 ]; then
+  info "The capacities match: $act_drive_capacity in MB"
+elif [ $(size_difference $exp_drive_capacity $act_drive_capacity) -lt 5 ]; then
+  warn "The capacities did not match: expected $exp_drive_capacity vs. found $act_drive_capacity"
+  warn "The difference in expected drive capacity was under 5%, continuing."
+elif [ $(size_difference $exp_drive_capacity $act_drive_capacity) -gt 5 ]; then
+  err "The difference in expected drive capacity was greater than 5%, aborting."
+  debug_step postinst_parts_one_drive_finish
+  exit 3
+fi
+
+if [ "$act_drive_dev_id" != "$exp_drive_dev_id" ]; then
+  warn "The expected drive device ID $exp_drive_dev_id was different from found $act_drive_dev_id"
+  warn "Continuing anyway with $act_drive_dev_id"
+fi
+
+debug_step postinst_parts_one_drive_changes
+
+# First destroy two extended partitions #2 and #5 created from the installation
+fdisk_part_del       '/dev/'$act_drive_dev_id'5'
+fdisk_part_del       '/dev/'$act_drive_dev_id'2'
+
+# Subtract boot partition space and use to actculate sys and data partition sizes
+capacity_available=$((act_drive_capacity - boot_size))
+sys_size=$(actc_sys_size $ratio $act_drive_capacity)
+
+# Create second primary partition for sys based on ratio
+fdisk_primary   '/dev/'$act_drive_dev_id $sys_size
+pvcreate -f -y  '/dev/'$act_drive_dev_id'2' # <-- note the 2 for second partition
+vgcreate sys    '/dev/'$act_drive_dev_id'2' # <-- note the 2 for second partition
+
+# Create data partition taking remainder which should follow ratios
+fdisk_primary   '/dev/'$act_drive_dev_id
+pvcreate -f -y  '/dev/'$act_drive_dev_id'3' # <-- note the 3 for second partition
+vgcreate data   '/dev/'$act_drive_dev_id'3' # <-- note the 3 for second partition
+
+debug_step postinst_parts_one_drive_finish

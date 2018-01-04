@@ -44,7 +44,7 @@ Vagrant.configure("2") do |config|
       vmware.vmx["memsize"] = vm_memory
       vmware.vmx["numvcpus"] = vm_cpus
       vmware.vmx["vhv.enable"] = "TRUE"
-      config.vm.synced_folder './', '/vagrant'
+      config.vm.synced_folder './', DEFAULT_ROOT + '/code'
       config.vm.synced_folder env_dir, DEFAULT_ROOT + ENVS_PATH
     end
   end
@@ -53,7 +53,7 @@ Vagrant.configure("2") do |config|
     vb.memory = vm_memory
     vb.cpus = vm_cpus
 
-    config.vm.synced_folder './', '/vagrant'
+    config.vm.synced_folder './', DEFAULT_ROOT + '/code'
     config.vm.synced_folder env_dir, DEFAULT_ROOT + ENVS_PATH
   end
 
@@ -67,9 +67,9 @@ Vagrant.configure("2") do |config|
     libvirt.memory = vm_memory
     libvirt.nested = 'true'
     libvirt.random_hostname = 'iso-builder'
-    config.vm.synced_folder './', '/vagrant', type: 'nfs', nfs_udp: false, nfs_version: 4
+    config.vm.synced_folder './', DEFAULT_ROOT + '/code', type: 'nfs', nfs_udp: false, nfs_version: 4
     config.vm.synced_folder env_dir, DEFAULT_ROOT + ENVS_PATH, type: 'nfs', nfs_udp: false, nfs_version: 4
-    # config.vm.synced_folder './', '/vagrant', type: '9p', disabled: false, accessmode: "squash", owner: "1000"
+    # config.vm.synced_folder './', DEFAULT_ROOT + '/code', type: '9p', disabled: false, accessmode: "squash", owner: "1000"
   end
 
   config.vm.provision 'shell', 

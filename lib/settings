@@ -1,8 +1,10 @@
-#!/bin/bash
 
 BASE_DIR="`dirname \"$0\"`"
 BASE_DIR="`( cd \"$BASE_DIR\" && pwd )`"
-TOP_DIR="$BASE_DIR/.."
+
+if [ -z "$TOP_DIR" ]; then
+  TOP_DIR="$BASE_DIR/.."
+fi
 
 . $TOP_DIR/lib/general
 . $TOP_DIR/lib/yaml

@@ -67,7 +67,7 @@ diff -u -r backup/build/boot/x86/menu.cfg installer/build/boot/x86/menu.cfg
 -label auto
 -	menu label ^Automated install
 -	kernel ${KERNEL}
--	append desktop=%desktop% auto=true priority=critical auto-install/enable preseed/url=${PRESEED_URL} ${VIDEO_MODE} initrd=${INITRD} --- quiet ${CONSOLE}
+-	append desktop=%desktop% auto=true priority=critical language=en country=US locale=en_US.UTF-8 auto-install/enable preseed/url=${PRESEED_URL} ${VIDEO_MODE} initrd=${INITRD} --- quiet ${CONSOLE}
 +include ${SYSDIR}stdmenu.cfg
 +include ${SYSDIR}gtk.cfg
 +include ${SYSDIR}txt.cfg

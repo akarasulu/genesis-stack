@@ -2,7 +2,10 @@
 
 BASE_DIR="`dirname \"$0\"`"
 BASE_DIR="`( cd \"$BASE_DIR\" && pwd )`"
-TOP_DIR="$BASE_DIR/.."
+
+if [ -z "$TOP_DIR" ]; then
+  TOP_DIR="$BASE_DIR/.."
+fi
 
 . $TOP_DIR/lib/general
 . $TOP_DIR/lib/yaml
@@ -13,7 +16,7 @@ TOP_DIR="$BASE_DIR/.."
 function vm_status() {
   vagrant status default | \
     egrep '^default[[:space:]]+(running|not created|shutoff)[[:space:]]+\(.*\)' | \
-    sed -e 's/^default[[:space:]]*//' -e 's/ (.*)//'
+    sed -e 's/^default[[:space:]]*//' -e 's/ (.*)//' 3>&1 1>&2 2>&3 3>&- | grep -v nokogiri
 }
 
 # ARGS: none
@@ -23,9 +26,9 @@ function vm_run() {
 
   if [ "$vm_state" != "running" ]; then
     if [ "$vm_state" == "shutoff" ]; then
-      vagrant up
+      vagrant up 3>&1 1>&2 2>&3 3>&- | grep -v nokogiri
     elif [ "$vm_state" == "not created" ]; then
-      vagrant up --provider "$vagrant_provider"
+      vagrant up --provider "$vagrant_provider" 3>&1 1>&2 2>&3 3>&- | grep -v nokogiri
     fi
   fi
 }
@@ -33,7 +36,7 @@ function vm_run() {
 # ARGS: none
 # Returns: nothing, just starts the vm if stopped
 function vm_ip() {
-    vm_run
-    vagrant ssh -c '/vagrant/bin/get-ip.sh'
+  vm_run
+  vagrant ssh -c '/var/www/html/code/bin/get-ip.sh' 3>&1 1>&2 2>&3 3>&- | grep -v nokogiri
 }
 

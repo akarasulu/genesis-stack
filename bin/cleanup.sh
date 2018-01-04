@@ -23,7 +23,7 @@ find $environments -type f -name postinst-in-target | xargs rm -f
 find $environments -type f -regex '.*\.qcow2' | xargs rm -f
 
 if [ "$1" == "vm" -o "$2" == "vm" ]; then 
-    vagrant destroy -f
+    vagrant destroy -f 3>&1 1>&2 2>&3 3>&- | grep -v nokogiri
 
     # For some reason the ssh tunnels for port forwarding is not cleaned up
     for port in 11888 10001 13143; do

@@ -2,7 +2,7 @@
 disks    : 1
 ssds     : 1
 hdds     : 0
-ceph     : false
+ceph     : 'no'
 md0      : 'no'
 md1      : 'no'
 sys      : 'ssd'
@@ -16,7 +16,7 @@ contrib  : 'compute'
 disks    : 1
 ssds     : 1
 hdds     : 0
-ceph     : true
+ceph     : 'yes'
 md0      : 'no'
 md1      : 'no'
 sys      : 'ssd'
@@ -30,7 +30,7 @@ contrib  : 'compute'
 disks    : 1
 ssds     : 0
 hdds     : 1
-ceph     : false
+ceph     : 'no'
 md0      : 'no'
 md1      : 'no'
 sys      : 'hdd'
@@ -44,7 +44,7 @@ contrib  : 'compute'
 disks    : 1
 ssds     : 0
 hdds     : 1
-ceph     : true
+ceph     : 'yes'
 md0      : 'no'
 md1      : 'no'
 sys      : 'hdd'
@@ -58,7 +58,7 @@ contrib  : 'compute'
 disks    : 2
 ssds     : 1
 hdds     : 1
-ceph     : false
+ceph     : 'no'
 md0      : 'no'
 md1      : 'no'
 sys      : 'ssd'
@@ -72,7 +72,7 @@ contrib  : 'compute'
 disks    : 2
 ssds     : 1
 hdds     : 1
-ceph     : true
+ceph     : 'yes'
 md0      : 'no'
 md1      : 'no'
 sys      : 'ssd'
@@ -86,7 +86,7 @@ contrib  : 'compute'
 disks    : 2
 ssds     : 2
 hdds     : 0
-ceph     : false
+ceph     : 'no'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'md0'
@@ -100,7 +100,7 @@ contrib  : 'compute'
 disks    : 2
 ssds     : 2
 hdds     : 0
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'md0'
@@ -114,7 +114,7 @@ contrib  : 'compute'
 disks    : 2
 ssds     : 0
 hdds     : 2
-ceph     : false
+ceph     : 'no'
 md0      : 'rl1'
 md1      : 'no'
 sys      : 'md0'
@@ -128,7 +128,7 @@ contrib  : 'compute'
 disks    : 2
 ssds     : 0
 hdds     : 2
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'md0'
@@ -142,7 +142,7 @@ contrib  : 'storage'
 disks    : 3
 ssds     : 0
 hdds     : 3
-ceph     : false
+ceph     : 'no'
 md0      : 'rl5'
 md1      : 'no'
 sys      : 'md0'
@@ -156,7 +156,7 @@ contrib  : 'compute'
 disks    : 3
 ssds     : 0
 hdds     : 3
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl5'
 md1      : 'no'
 sys      : 'md0'
@@ -170,7 +170,7 @@ contrib  : 'storage'
 disks    : 3
 ssds     : 1
 hdds     : 2
-ceph     : false
+ceph     : 'no'
 md0      : 'rl1'
 md1      : 'no'
 sys      : 'ssd'
@@ -184,7 +184,7 @@ contrib  : 'compute'
 disks    : 3
 ssds     : 1
 hdds     : 2
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'ssd'
@@ -198,7 +198,7 @@ contrib  : 'storage'
 disks    : 3
 ssds     : 2
 hdds     : 1
-ceph     : false
+ceph     : 'no'
 md0      : 'rl1'
 md1      : 'no'
 sys      : 'ssd'
@@ -212,7 +212,7 @@ contrib  : 'compute'
 disks    : 3
 ssds     : 2
 hdds     : 1
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'ssd'
@@ -226,7 +226,7 @@ contrib  : 'storage'
 disks    : 3
 ssds     : 3
 hdds     : 0
-ceph     : false
+ceph     : 'no'
 md0      : 'rl5'
 md1      : 'no'
 sys      : 'md0'
@@ -240,7 +240,7 @@ contrib  : 'compute'
 disks    : 3
 ssds     : 3
 hdds     : 0
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'md0'
@@ -254,7 +254,7 @@ contrib  : 'compute'
 disks    : 4
 ssds     : 0
 hdds     : 4
-ceph     : false
+ceph     : 'no'
 md0      : 'rl10'
 md1      : 'no'
 sys      : 'md0'
@@ -268,7 +268,7 @@ contrib  : 'compute'
 disks    : 4
 ssds     : 0
 hdds     : 4
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'md0'
@@ -282,7 +282,7 @@ contrib  : 'storage'
 disks    : 4
 ssds     : 1
 hdds     : 3
-ceph     : false
+ceph     : 'no'
 md0      : 'rl5'
 md1      : 'no'
 sys      : 'ssd'
@@ -296,7 +296,7 @@ contrib  : 'compute'
 disks    : 4
 ssds     : 1
 hdds     : 3
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'ssd'
@@ -310,7 +310,7 @@ contrib  : 'storage'
 disks    : 4
 ssds     : 2
 hdds     : 2
-ceph     : false
+ceph     : 'no'
 md0      : 'rl0'
 md1      : 'rl1'
 sys      : 'md0'
@@ -324,7 +324,7 @@ contrib  : 'compute'
 disks    : 4
 ssds     : 2
 hdds     : 2
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'rl0'
 sys      : 'md0'
@@ -338,7 +338,7 @@ contrib  : 'storage'
 disks    : 4
 ssds     : 3
 hdds     : 1
-ceph     : false
+ceph     : 'no'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'md0'
@@ -352,7 +352,7 @@ contrib  : 'compute'
 disks    : 4
 ssds     : 3
 hdds     : 1
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'md0'
@@ -366,7 +366,7 @@ contrib  : 'compute'
 disks    : 4
 ssds     : 4
 hdds     : 0
-ceph     : false
+ceph     : 'no'
 md0      : 'rl5'
 md1      : 'no'
 sys      : 'md0'
@@ -380,7 +380,7 @@ contrib  : 'compute'
 disks    : 4
 ssds     : 4
 hdds     : 0
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'md0'
@@ -394,7 +394,7 @@ contrib  : 'compute'
 disks    : 5
 ssds     : 0
 hdds     : 5
-ceph     : false
+ceph     : 'no'
 md0      : 'rl5'
 md1      : 'no'
 sys      : 'md0'
@@ -408,7 +408,7 @@ contrib  : 'compute'
 disks    : 5
 ssds     : 0
 hdds     : 5
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'md0'
@@ -422,7 +422,7 @@ contrib  : 'storage'
 disks    : 5
 ssds     : 1
 hdds     : 4
-ceph     : false
+ceph     : 'no'
 md0      : 'rl10'
 md1      : 'no'
 sys      : 'ssd'
@@ -436,7 +436,7 @@ contrib  : 'compute'
 disks    : 5
 ssds     : 1
 hdds     : 4
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'ssd'
@@ -450,7 +450,7 @@ contrib  : 'storage'
 disks    : 5
 ssds     : 2
 hdds     : 3
-ceph     : false
+ceph     : 'no'
 md0      : 'rl0'
 md1      : 'rl5'
 sys      : 'md0'
@@ -464,7 +464,7 @@ contrib  : 'compute'
 disks    : 5
 ssds     : 2
 hdds     : 3
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'rl0'
 sys      : 'md0'
@@ -478,7 +478,7 @@ contrib  : 'storage'
 disks    : 5
 ssds     : 3
 hdds     : 2
-ceph     : false
+ceph     : 'no'
 md0      : 'rl0'
 md1      : 'rl1'
 sys      : 'md0'
@@ -492,7 +492,7 @@ contrib  : 'compute'
 disks    : 5
 ssds     : 3
 hdds     : 2
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'rl0'
 sys      : 'md0'
@@ -506,7 +506,7 @@ contrib  : 'storage'
 disks    : 5
 ssds     : 4
 hdds     : 1
-ceph     : false
+ceph     : 'no'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'md0'
@@ -520,7 +520,7 @@ contrib  : 'compute'
 disks    : 5
 ssds     : 4
 hdds     : 1
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'md0'
@@ -534,7 +534,7 @@ contrib  : 'compute'
 disks    : 5
 ssds     : 5
 hdds     : 0
-ceph     : false
+ceph     : 'no'
 md0      : 'rl5'
 md1      : 'no'
 sys      : 'md0'
@@ -548,7 +548,7 @@ contrib  : 'compute'
 disks    : 5
 ssds     : 5
 hdds     : 0
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'md0'
@@ -562,11 +562,11 @@ contrib  : 'compute'
 disks    : 6
 ssds     : 0
 hdds     : 6
-ceph     : false
+ceph     : 'no'
 md0      : 'rl10'
 md1      : 'no'
 sys      : 'md0'
-data     : 'no'
+data     : 'md0'
 ratio    : '1:15'
 var_home : 'data'
 vm       : 'data'
@@ -576,7 +576,7 @@ contrib  : 'compute'
 disks    : 6
 ssds     : 0
 hdds     : 6
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'md0'
@@ -590,7 +590,7 @@ contrib  : 'storage'
 disks    : 6
 ssds     : 1
 hdds     : 5
-ceph     : false
+ceph     : 'no'
 md0      : 'rl5'
 md1      : 'no'
 sys      : 'ssd'
@@ -604,7 +604,7 @@ contrib  : 'compute'
 disks    : 6
 ssds     : 1
 hdds     : 5
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'ssd'
@@ -618,7 +618,7 @@ contrib  : 'storage'
 disks    : 6
 ssds     : 2
 hdds     : 4
-ceph     : false
+ceph     : 'no'
 md0      : 'rl0'
 md1      : 'rl10'
 sys      : 'md0'
@@ -632,7 +632,7 @@ contrib  : 'compute'
 disks    : 6
 ssds     : 2
 hdds     : 4
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'rl0'
 sys      : 'md0'
@@ -646,7 +646,7 @@ contrib  : 'storage'
 disks    : 6
 ssds     : 3
 hdds     : 3
-ceph     : false
+ceph     : 'no'
 md0      : 'rl5'
 md1      : 'rl5'
 sys      : 'md0'
@@ -660,7 +660,7 @@ contrib  : 'compute'
 disks    : 6
 ssds     : 3
 hdds     : 3
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'rl0'
 sys      : 'md0'
@@ -674,7 +674,7 @@ contrib  : 'storage'
 disks    : 6
 ssds     : 4
 hdds     : 2
-ceph     : false
+ceph     : 'no'
 md0      : 'rl0'
 md1      : 'rl1'
 sys      : 'md0'
@@ -688,7 +688,7 @@ contrib  : 'compute'
 disks    : 6
 ssds     : 4
 hdds     : 2
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'rl0'
 sys      : 'md0'
@@ -702,7 +702,7 @@ contrib  : 'storage'
 disks    : 6
 ssds     : 5
 hdds     : 1
-ceph     : false
+ceph     : 'no'
 md0      : 'rl5'
 md1      : 'no'
 sys      : 'md0'
@@ -716,7 +716,7 @@ contrib  : 'compute'
 disks    : 6
 ssds     : 5
 hdds     : 1
-ceph     : true
+ceph     : 'yes'
 md0      : 'rl0'
 md1      : 'no'
 sys      : 'md0'
@@ -730,11 +730,11 @@ contrib  : 'compute'
 disks    : 6
 ssds     : 6
 hdds     : 0
-ceph     : false
+ceph     : 'no'
 md0      : 'rl5'
 md1      : 'no'
 sys      : 'md0'
-data     : 'no'
+data     : 'md0'
 ratio    : '1:5'
 var_home : 'data'
 vm       : 'data'

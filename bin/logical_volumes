@@ -1,0 +1,102 @@
+
+# Pull in file system information which looks like
+#
+# name: root
+# mountPoint: /
+# type: ext4
+# size: 8192
+#
+
+debug_step postinst_lvfs_create
+
+# For new use this temporary new one
+fstab='/mnt/root/etc/fstab.new'
+
+# Cat out parts of the original into the new
+fstab_ori='/mnt/root/etc/fstab'
+echo "/dev/mapper/sys-root / ext4 errors=remount-ro 0 1" > "$fstab"
+cat "$fstab_ori" | grep '/boot'                         >> "$fstab"
+cat "$fstab_ori" | grep 'sr0'                           >> "$fstab"
+
+# Remove old original, copy new over and change pointer to file
+rm  "$fstab_ori"
+mv  "$fstab" "$fstab_ori"
+fstab="$fstab_ori"
+
+file_systems="$base_dir/file-systems.yml"
+records=$(count "$file_systems")
+
+int ii=0
+while [ $ii -lt records ]; do
+  rec $ii "$file_systems"
+
+  debug_step postinst_lvfs_create_$name "name=$name, mountPoint=$mountPoint, type=$type, size=$size, rec=$ii"
+  
+  if [ "$name" == "swap" ]; then
+    info "Creating the swap logical volume"
+    act_size=$size
+
+    if [ -n "$(echo size | grep %)" ]; then
+      mem=$(grep MemTotal: /proc/meminfo | sed -e 's/ //g' -e 's/kB//' | cut -d':' -f2)
+      mem=$((mem / 1024))
+      act_size=$((size / 100 * mem))
+      info "Using percent specifier ($size) for swap logical volume size of $act_size"
+    else
+      info "Using amount specifier ($size) for swap logical volume size"
+    fi
+
+    lvcreate -y -n $name -L $act_size sys
+    swap_uuid="$(mkswap /dev/sys/swap | grep UUID | cut -d'=' -f2)"
+    swapon /dev/sys/swap
+    echo "/dev/mapper/$vg-swap none swap sw 0 0" >> "$fstab"
+  elif [ "$name" == "boot" ]; then
+    info "Skipping boot because it has already created by DI"
+  elif [ "$name" == "vm" ]; then
+    lvcreate -n $name -L $size'M' data
+    
+    if [ -z "$(echo $type | egrep '^ext[2|3|4]' )" ]; then
+      mkfs."$type" -F -F -L $name /dev/data/vm
+    else
+      mkfs."$type" -F -F -L $name -T huge /dev/data/vm
+    fi
+
+    echo "/dev/mapper/$vg-vm $mountPoint $type defaults 0 2" >> "$fstab"
+  else
+    lvcreate -n $name -L $size'M'
+    mkfs."$type" -F -F -L $name /dev/$vg/$name
+    src=/mnt/root"$mountPoint"
+    dst=/target"$mountPoint"
+
+    mkdir -p "$dst" 
+    mkdir -p "$src"
+
+    mount /dev/$vg/$name "$dst"
+
+    # We handle root last
+    if [ "$name" != "root" ]; then
+        cd /mnt/root"$mountPoint"
+        tar cf - . | (cd "$dst" && tar xf -)
+        
+        rm -rf /mnt/root"$mountPoint"
+        sync
+        umount /dev/$vg/$name
+
+        # Add entries into fstab
+        echo "/dev/mapper/$vg-$name $mountPoint $type defaults 0 2" >> "$fstab"
+    fi
+  fi
+done
+
+debug_step postinst_lvfs_restore_root
+
+cd /mnt/root
+tar cf - . | (cd /target && tar xf -)
+
+cd /
+rm -rf /mnt/root
+sync; sync; sync
+umount -l /mnt
+umount -l /target
+
+debug_step postinst_lvfs_finish
+

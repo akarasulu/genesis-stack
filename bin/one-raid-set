@@ -1,0 +1,207 @@
+#
+# Presumes one RAID set composed of equal drives and zero or more UNEQAUL 
+# drives NOT suitable for RAID exists on the system.
+# 
+# This configuration is a common storage server configuration. Usually one 
+# drive (might be an SSD, or HDD) is the boot drive and system volume group
+# while the one RAID set is used for data. 
+#
+# This can get flipped on its head though with a small raid for the system
+# volume group and a large HDD for the data in which case we really have a
+# compute node.
+#
+# 1. the primary boot drive may be on the sys or data drive (must be checked)
+# 2. the boot partition might be on one of the raid set drives
+# 3. the sys and data volume groups may share the RAID if there are no other
+#    spare non-raid drives
+
+# Expected Variables (exp_)
+# --------------------------
+#
+# boot_size 
+# boot_drive
+#
+# exp_other_drive
+# exp_other_drive_sizes
+#
+# exp_total_drive_count=2
+#
+# exp_md0_drive_set
+# exp_md0_drives
+# exp_md0_drive_count
+# exp_md0_drive_sizes (in MB)
+# 
+
+debug_step postinst_parts_one_raid_set_checks
+
+if [ "$md0" == "no" ]; then
+  err "Was expecting one raid sets. Something is wrong!"
+  debug_step postinst_parts_one_raid_set_finish
+  exit 1
+fi
+
+# These are the actual values found
+act_md0_drive_count=0
+act_md0_drive_sizes=0
+act_md0_drives=''
+act_total_drive_count=0
+
+other_drive=''
+other_drive_size=0
+
+ds_file="$(mktemp)"
+drive_sets > "$ds_file"
+
+while read drive_sizes drive_count drives ; do
+  if [ $drive_count -gt 1 ]; then
+    act_md0_drive_count="$drive_count"
+    act_md0_drive_sizes="$drive_sizes"
+    act_md0_drives="$(echo $drives | sed -e 's/,/ /g')"
+    act_total_drive_count=$((act_total_drive_count + drive_count))
+  elif [ $drive_count -eq 1 ]; then
+    other_drive="$drives"
+    other_drive_size="$drive_sizes"
+    act_total_drive_count=$((act_total_drive_count + 1))
+  fi
+done < "$ds_file"
+
+if [ $act_md0_drive_count -lt 2 ]; then
+  err "Could not find a drive set containing more than two drives."
+  debug_step postinst_parts_one_raid_set_finish
+  exit 2
+fi
+
+#
+# Error checking
+#
+
+if [ $exp_total_drive_count -ne $act_total_drive_count ]; then
+  err "The drive counts do not match!"
+  err "Encountered $act_total_drive_count drives, but expected $exp_total_drive_count"
+  debug_step postinst_parts_one_raid_set_finish
+  exit 2
+fi
+
+if [ $exp_md0_drive_count -ne $act_md0_drive_count ]; then
+  err "The md0 drive counts do not match!"
+  err "Encountered $act_md0_drive_count drives, but expected $exp_md0_drive_count"
+  debug_step postinst_parts_one_raid_set_finish
+  exit 3
+fi
+
+if [ $exp_md0_drive_sizes -ne $act_md0_drive_sizes ]; then
+  warn "The md0 drive sizes do not match!"
+  warn "Encountered $act_md0_drive_sizes drive sizes, but expected $exp_md0_drive_sizes"
+  difference=$(size_difference $exp_md0_drive_sizes $act_md0_drive_sizes)
+  if [ $difference -lt 5 ]; then
+    warn "Size difference $difference < 5% proceeding forward..."
+  else 
+    err "Size difference $difference > 5% aborting!"
+    debug_step postinst_parts_one_raid_set_finish
+    exit 4
+  fi
+fi
+
+#
+# Partition and Create Raid Devices
+#
+
+# if includes boot drive, then second part is raid, otherwise first
+raid_part=1
+if [ -n "$(echo $act_md0_drives | grep $boot_drive)" ]; then
+  raid_part=2
+fi
+
+debug_step postinst_parts_one_raid_set_create_raidset
+
+md0_raid_devs=''
+info "Starting partitioning on md0 devices: $act_md0_drives"
+for d in $act_md0_drives; do
+  if [ "$d" == "$boot_drive" -a $raid_part -eq 2 ]; then
+    info "First primary partition ($boot_part) already exists on the boot drive ($d)."
+    info "Need to delete extended partitions"
+
+    # TODO: explicitly delete partitions by number instead of from tail
+    fdisk_part_del "/dev/$d"'5'
+    fdisk_part_del "/dev/$d"'2'
+    
+    info "Creating second primary RAID partition for rest of drive $d"
+    fdisk_raid_p2 "/dev/$d"
+  elif [ $raid_part -eq 2 ]; then
+    info "Creating dos partition table on $d"
+    info "Creating partition equal in size ($boot_size) to boot partition ($boot_part) on ($d)"
+    fdisk_primary "/dev/$d" "$boot_size"
+
+    info "Creating second primary RAID partition for rest of drive $d"
+    fdisk_raid_p2 "/dev/$d"
+  else 
+    info "Creating first RAID partition for all of drive $d"
+    fdisk_raid_p1 "/dev/$d"
+  fi
+
+  md0_raid_devs="$md0_raid_devs /dev/$d"$raid_part
+done
+
+level="$(echo $md0 | sed -e 's/^rl//')"
+info "Creating RAID Level $level md0 device"
+mdadm --create /dev/md0 --level=$level --raid-devices=$act_md0_drive_count $md0_raid_devs
+
+md0_size=0
+if [ $level -eq 0 ]; then
+  md0_size=$(($act_md0_drive_count * $act_md0_drive_sizes))
+elif [ $level -eq 1 -o $level -eq 10 ]; then
+  md0_size=$(($act_md0_drive_count * $act_md0_drive_sizes / 2))
+elif [ $level -eq 5 ]; then
+  md0_size=$(( ( $act_md0_drive_count - 1 ) * $act_md0_drive_sizes ))
+else 
+  err "Unrecognized RAID level $level. Aborting..."
+  debug_step postinst_parts_one_raid_set_finish
+  exit 5
+fi
+
+#
+# Create PV, and VG
+#
+
+debug_step postinst_parts_one_raid_set_create_pvvglvm
+
+# Sys and data may be shared on md0
+if [ "$ratio" != "na" -a "$sys" == "md0" -a "$data" == "md0" ]; then
+  fdisk_gpt /dev/md0
+  sys_size=$(calc_sys_size $ratio $md0_size)
+  fdisk_lvm_p1 /dev/md0 $sys_size'M'
+  fdisk_lvm_p2 /dev/md0
+  
+  # System VG
+  pvcreate -f -y /dev/md0p0
+  vgcreate sys /dev/md0p0
+
+  # Data VG
+  pvcreate -f -y /dev/md0p1
+  vgcreate data /dev/md0p1
+elif [ $other_drive_size -lt $act_md0_drive_sizes -a "$boot_drive" == "$other_drive" ]; then
+  # other drive is SSD, md0 on HDD
+  fdisk_primary /dev/$other_drive
+
+  # System VG on SSD Partition (other single drive)
+  pvcreate -f -y /dev/$other_drive'2'
+  vgcreate sys /dev/$other_drive'2'
+
+  # Data VG on RAID
+  pvcreate -f -y /dev/md0
+  vgcreate data /dev/md0
+else
+  # other drive is HDD, md0 on SSD, 
+
+  # System VG on SSD RAID
+  pvcreate -f -y /dev/md0
+  vgcreate sys /dev/md0
+
+  # Data VG on HDD Partition (other single drive)
+  fdisk_gpt /dev/$other_drive
+  fdisk_primary /dev/$other_drive
+  pvcreate -f -y /dev/$other_drive'1'
+  vgcreate data /dev/$other_drive'1'
+fi
+
+  debug_step postinst_parts_one_raid_set_finish

@@ -112,5 +112,5 @@ if ! shopt -oq posix; then
   fi
 fi
 
-export PATH=$PATH:/vagrant/bin
+export PATH=$PATH:/var/www/html/code/bin
 

@@ -1,0 +1,134 @@
+
+debug_step postinst_parts_two_raidsets_checks
+
+if [ "$md0" == "no" -o "$md1" == "no" ]; then
+  err "Was expecting two raid sets. Something is wrong!"
+  debug_step postinst_parts_two_raidsets_finish
+  exit 1
+fi
+
+# These are the calculated ones
+cal_md0_drive_set=$(drive_sets | head -n 1)
+cal_md0_drive_count=$(echo $cal_md0_drive_set | cut -d' ' -f2)
+cal_md0_drive_sizes=$(echo $cal_md0_drive_set | cut -d' ' -f1)
+cal_md0_drives=$(echo $cal_md0_drive_set | cut -d' ' -f3 | sed -e 's/,/ /g')
+
+cal_md1_drive_set=$(drive_sets | tail -n 1)
+cal_md1_drive_count=$(echo $cal_md1_drive_set | cut -d' ' -f2)
+cal_md1_drive_sizes=$(echo $cal_md1_drive_set | cut -d' ' -f1)
+cal_md1_drives=$(echo $cal_md1_drive_set | cut -d' ' -f3 | sed -e 's/,/ /g')
+
+cal_total_drive_count=6
+
+#
+# Error checking
+#
+
+if [ $exp_total_drive_count -ne $cal_total_drive_count ]; then
+  err "The drive counts do not match!"
+  err "Encountered $cal_total_drive_count drives, but expected $exp_total_drive_count"
+  debug_step postinst_parts_two_raidsets_finish
+  exit 2
+fi
+
+if [ $exp_md0_drive_count -ne $cal_md0_drive_count ]; then
+  err "The md0 drive counts do not match!"
+  err "Encountered $cal_md0_drive_count drives, but expected $exp_md0_drive_count"
+  debug_step postinst_parts_two_raidsets_finish
+  exit 2
+fi
+
+if [ $exp_md1_drive_count -ne $cal_md1_drive_count ]; then
+  err "The md1 drive counts do not match!"
+  err "Encountered $cal_md1_drive_count drives, but expected $exp_md1_drive_count"
+  debug_step postinst_parts_two_raidsets_finish
+  exit 3
+fi
+
+if [ $exp_md0_drive_sizes -ne $cal_md0_drive_sizes ]; then
+  warn "The md0 drive sizes do not match!"
+  warn "Encountered $cal_md0_drive_sizes drive sizes, but expected $exp_md0_drive_sizes"
+  difference=$(size_difference $exp_md0_drive_sizes $cal_md0_drive_sizes)
+  if [ $difference -lt 5 ]; then
+    warn "Size difference $difference < 5% proceeding forward..."
+  else 
+    err "Size difference $difference > 5% aborting!"
+    debug_step postinst_parts_two_raidsets_finish
+    exit 4
+  fi
+fi
+
+if [ $exp_md1_drive_sizes -ne $cal_md1_drive_sizes ]; then
+  warn "The md1 drive sizes do not match!"
+  warn "Encountered $cal_md1_drive_sizes drive sizes, but expected $exp_md1_drive_sizes"
+  difference=$(size_difference $exp_md1_drive_sizes $cal_md1_drive_sizes)
+  if [ $difference -lt 5 ]; then
+    warn "Size difference $difference < 5% proceeding forward..."
+  else 
+    err "Size difference $difference > 5% aborting!"
+    debug_step postinst_parts_two_raidsets_finish
+    exit 4
+  fi
+fi
+
+#
+# Parititioning and Raid Creation
+#
+
+debug_step postinst_parts_two_raidsets_create_raidsets
+
+md0_raid_devs=''
+info "Starting partitioning on md0 devices: $cal_md0_drives"
+for d in $cal_md0_drives; do
+  if [ "$d" == "$boot_drive" ]; then
+    info "First primary partition ($boot_part) already exists on the boot drive ($d)."
+    info "Need to delete extended partitions"
+    fdisk_part_del "/dev/$d"'5'
+    fdisk_part_del "/dev/$d"'2'
+  else
+    info "Creating dos partition table on $d"
+    info "Creating partition equal in size ($boot_size) to boot partition ($boot_part) on ($d)"
+    fdisk_primary "/dev/$d" "$boot_size"
+  fi
+  
+  info "Creating second primary RAID partition for rest of drive $d"
+  fdisk_raid_p2 "/dev/$d"
+
+  # 2 at end because it's the second primary partition on the drive
+  md0_raid_devs="$md0_raid_devs /dev/$d"2
+done
+
+level="$(echo $md0 | sed -e 's/^rl//')"
+info "Creating RAID Level $level md0 device"
+mdadm --create /dev/md0 --level=$level --raid-devices=$cal_md0_drive_count $md0_raid_devs
+
+md1_raid_devs=''
+info "Starting partitioning on md1 devices: $cal_md1_drives"
+for d in $cal_md1_drives; do
+  info "Creating only/first primary RAID partition for all of drive $d"
+  
+  # Unlike other smaller ssd drives for md0 we use gpt (dos is automatic)
+  fdisk_gpt "/dev/$d"
+  fdisk_raid_p1 "/dev/$d"
+
+  # 1 at end because it's the first partition on the drive
+  md1_raid_devs="$md1_raid_devs /dev/$d"1
+done
+
+level="$(echo $md1 | sed -e 's/^rl//')"
+info "Creating RAID Level $level md1 device"
+mdadm --create /dev/md1 --level=$level --raid-devices=$cal_md1_drive_count $md1_raid_devs
+
+# 
+# Create PV, and VG
+#
+
+debug_step postinst_parts_two_raidsets_create_pvvglvm
+
+pvcreate -f -y /dev/md0
+vgcreate sys /dev/md0
+
+pvcreate -f -y /dev/md1
+vgcreate data /dev/md1
+
+debug_step postinst_parts_two_raidsets_finish

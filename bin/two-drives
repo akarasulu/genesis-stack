@@ -1,0 +1,134 @@
+#
+# Presumes two UNEQAUL drives NOT suitable for RAID exist on the system.
+# 
+# This configuration is common. One smaller drive might be an SSD, and the
+# other larger drive might be an HDD, but the rotational nature of the drives
+# is guaranteed. We treat one as the drive holding the sys vg, and the other
+# as the drive holding the data vg.
+#
+# 1. the primary boot drive may be on the sys or data drive (must be determined)
+# 2. sys and data volume groups do NOT share a drive
+# 3. there will be a final total of 3 primary partitions on two drives
+#    - boot primary existing
+#    - sys primary created (first or second if sharing with boot)
+#    - data primary created (first or second if sharing with boot)
+
+# Expected Variables (exp_)
+# --------------------------
+#
+# boot_size 
+# boot_drive
+#
+# exp_total_drive_count=2
+# 
+# exp_sys_drive_dev_id
+# exp_sys_drive_capacity (in MB)
+# 
+# exp_data_drive_dev_id
+# exp_data_drive_capacity (in MB)
+#
+
+debug_step postinst_parts_two_drives_checks
+
+act_total_drive_count=$(list_drives | wc -w)
+
+if [ $act_total_drive_count -ne $exp_total_drive_count ]; then
+  err "The expected drive count $exp_total_drive_count does not equal the discovered drive count of $act_total_drive_count"
+  debug_step postinst_parts_two_drives_finish
+  exit 1
+fi
+
+if [ $act_total_drive_count -ne 2 ]; then
+  err "The total drive count should be 2 but is $act_total_drive_count"
+  debug_step postinst_parts_two_drives_finish
+  exit 2
+fi
+
+# Let's get the drives
+act_sys_drive_dev_id=''
+act_data_drive_dev_id=''
+d1=$(list_drives | cut -d' ' -f1)
+d1_size=$(drive_capacity $d1)
+d2=$(list_drives | cut -d' ' -f2)
+d2_size=$(drive_capacity $d2)
+
+# Presuming the smaller drive is the SSD for Sys
+if [ $d1_size -lt $d2_size ]; then
+  act_sys_drive_dev_id="$d1"
+  act_sys_drive_capacity=$((d1_size / 1024 / 1024))
+
+  act_data_drive_dev_id="$d2"
+  act_data_drive_capacity=$((d2_size / 1024 / 1024))
+else
+  act_sys_drive_dev_id="$d2"
+  act_sys_drive_capacity=$((d2_size / 1024 / 1024))
+
+  act_data_drive_dev_id="$d1"
+  act_data_drive_capacity=$((d1_size / 1024 / 1024))
+fi
+
+if [ "$exp_sys_drive_dev_id" == "$act_sys_drive_dev_id" ]; then
+  info "Great! The expected sys drive id matches the found sys drive id: $exp_sys_drive_dev_id"
+else 
+  warn "The expected sys drive id $exp_sys_drive_dev_id does NOT match the found sys drive id $act_sys_drive_dev_id"
+  warn "Continuing anyway..."
+fi
+
+if [ "$exp_data_drive_dev_id" == "$act_data_drive_dev_id" ]; then
+  info "Great! The expected data drive id matches the found data drive id: $exp_data_drive_dev_id"
+else 
+  warn "The expected data drive id $exp_data_drive_dev_id does NOT match the found data drive id $act_data_drive_dev_id"
+  warn "Continuing anyway..."
+fi
+
+if [ $(size_difference $exp_sys_drive_capacity $act_sys_drive_capacity) -eq 0 ]; then
+  info "The sys drive capacities match: $act_sys_drive_capacity in MB"
+elif [ $(size_difference $exp_sys_drive_capacity $act_sys_drive_capacity) -lt 5 ]; then
+  warn "The sys drive capacities did not match: expected $exp_sys_drive_capacity vs. found $act_sys_drive_capacity"
+  warn "The difference in expected sys drive capacity was under 5%, continuing."
+elif [ $(size_difference $exp_sys_drive_capacity $act_sys_drive_capacity) -gt 5 ]; then
+  err "The sys drive difference in expected drive capacity was greater than 5%, aborting."
+  debug_step postinst_parts_two_drives_finish
+  exit 3
+fi
+
+if [ $(size_difference $exp_data_drive_capacity $act_data_drive_capacity) -eq 0 ]; then
+  info "The data drive capacities match: $act_data_drive_capacity in MB"
+elif [ $(size_difference $exp_data_drive_capacity $act_data_drive_capacity) -lt 5 ]; then
+  warn "The data drive capacities did not match: expected $exp_data_drive_capacity vs. found $act_data_drive_capacity"
+  warn "The difference in expected data drive capacity was under 5%, continuing."
+elif [ $(size_difference $exp_data_drive_capacity $act_data_drive_capacity) -gt 5 ]; then
+  err "The data drive difference in expected drive capacity was greater than 5%, aborting."
+  debug_step postinst_parts_two_drives_finish
+  exit 3
+fi
+
+debug_step postinst_parts_two_drives_changes
+
+if [ "$boot_drive" == "$act_sys_drive_dev_id" ]; then
+  info "The boot partition is on the sys drive $act_sys_drive_dev_id"
+  fdisk_part_del '/dev/'$act_sys_drive_dev_id'5'
+  fdisk_part_del '/dev/'$act_sys_drive_dev_id'2'
+  fdisk_primary '/dev/'$act_sys_drive_dev_id
+  pvcreate -f -y  '/dev/'$act_sys_drive_capacity'2'
+  vgcreate sys '/dev/'$act_sys_drive_capacity'2'
+
+  fdisk_gpt '/dev/'$act_data_drive_dev_id
+  fdisk_primary '/dev/'$act_data_drive_dev_id
+  pvcreate -f -y '/dev/'$act_data_drive_capacity'1'
+  vgcreate data '/dev/'$act_data_drive_capacity'1'
+else
+  info "The boot partition is on the data drive $act_sys_drive_dev_id"
+  fdisk_part_del '/dev/'$act_data_drive_dev_id'5'
+  fdisk_part_del '/dev/'$act_data_drive_dev_id'2'
+  fdisk_primary '/dev/'$act_data_drive_dev_id
+  pvcreate -f -y  '/dev/'$act_data_drive_capacity'2'
+  vgcreate sys '/dev/'$act_data_drive_capacity'2'
+
+  fdisk_gpt '/dev/'$act_sys_drive_dev_id
+  fdisk_primary '/dev/'$act_sys_drive_dev_id
+  pvcreate -f -y '/dev/'$act_sys_drive_capacity'1'
+  vgcreate data '/dev/'$act_sys_drive_capacity'1'
+fi
+
+debug_step postinst_parts_two_drives_finish

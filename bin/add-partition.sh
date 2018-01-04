@@ -21,7 +21,7 @@ p
 
 w
 "|sudo fdisk /dev/nbd6
-sudo mkfs.ext4 /dev/nbd6p4
+sudo mkfs.ext4 -F /dev/nbd6p4
 sudo dd if=/dev/nbd6 bs=10M | gzip > $iso.gz 
 rm $iso
 sudo qemu-nbd --disconnect /dev/nbd6

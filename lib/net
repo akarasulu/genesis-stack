@@ -1,4 +1,9 @@
-#!/bin/sh
+
+# ARGS: none
+# OUTPUT: check if in DI
+di () {
+  test -d /target
+}
 
 # ARGS: none
 # OUTPUT: the default gateway's ip address
@@ -60,21 +65,26 @@ cidr2mask () {
   local full_octets=$(($1/8))
   local partial_octet=$(($1%8))
 
-  for ((i=0;i<4;i+=1)); do
+  i=0; 
+  while [ $i -lt 4 ]; do
     if [ $i -lt $full_octets ]; then
-      mask+=255
+      mask=$mask'255'
     elif [ $i -eq $full_octets ]; then
-      mask+=$((256 - 2**(8-$partial_octet)))
+      mask=$mask$((256 - 2**(8-$partial_octet)))
     else
-      mask+=0
-    fi  
-    test $i -lt 3 && mask+=.
-  done
+      mask=$mask'0'
+    fi
+    
+    if [ $i -lt 3 ]; then
+      mask=$mask'.'
+    fi
 
-  echo $mask
+    i=$((i + 1));
+  done
+  echo "$mask"
 }
 
-# ARGS $1: the cidr mask (num bits in mask: 1-32)
+# ARGS $1: the cidr mask (num bits in mask: 0-32)
 # OUTPUT: the octet version of the cidr mask (i.e. 255.255.0.0 for 16)
 default_gw_mask () {
   cidr2mask `default_gw_cidr_mask`  
@@ -83,55 +93,196 @@ default_gw_mask () {
 # ARGS $1: the mask octets (i.e. 255.255.0.0)
 # OUTPUT: the cidr number for the mask (i.e. 24 for  255.255.255.0)
 mask2cidr () {
-    nbits=0
-    IFS=.
-    for dec in $1 ; do
-        case $dec in
-            255) let nbits+=8;;
-            254) let nbits+=7 ; break ;;
-            252) let nbits+=6 ; break ;;
-            248) let nbits+=5 ; break ;;
-            240) let nbits+=4 ; break ;;
-            224) let nbits+=3 ; break ;;
-            192) let nbits+=2 ; break ;;
-            128) let nbits+=1 ; break ;;
-            0);;
-            *) echo "Error: $dec is not recognised"; exit 1
-        esac
-    done
-    echo "$nbits"
+  nbits=0
+  IFS=.
+  for dec in $1 ; do
+    case $dec in
+      255) let nbits+=8;;
+      254) let nbits+=7 ; break ;;
+      252) let nbits+=6 ; break ;;
+      248) let nbits+=5 ; break ;;
+      240) let nbits+=4 ; break ;;
+      224) let nbits+=3 ; break ;;
+      192) let nbits+=2 ; break ;;
+      128) let nbits+=1 ; break ;;
+        0);;
+        *) echo "Error: $dec is not recognised"; exit 1
+    esac
+  done
+  echo "$nbits"
 }
+
+# TODO: make these bourne shell compatible
+# problem with redirects and arrays
 
 # ARG $1: ip addr
 # ARG $2: net mask
 netcalc () {
-    local IFS='.' ip i
-    local -a oct msk
-	
-    read -ra oct <<<"$1"
-    read -ra msk <<<"$2"
+  local IFS='.' ip
+  local msk1 msk2 msk3 msk4
+  local oct1 oct2 oct3 oct4
 
-    for i in ${!oct[@]}; do
-        ip+=( "$(( oct[i] & msk[i] ))" )
-    done
-    
-    echo "${ip[*]}"
+  oct1=`echo "$1" | cut -d '.' -f 1`
+  oct2=`echo "$1" | cut -d '.' -f 2`
+  oct3=`echo "$1" | cut -d '.' -f 3`
+  oct4=`echo "$1" | cut -d '.' -f 4`
+
+  msk1=`echo "$2" | cut -d '.' -f 1`
+  msk2=`echo "$2" | cut -d '.' -f 2`
+  msk3=`echo "$2" | cut -d '.' -f 3`
+  msk4=`echo "$2" | cut -d '.' -f 4`
+
+  ip=$(($oct1 & $msk1))
+  ip="$ip."$(($oct2 & $msk2))
+  ip="$ip."$(($oct3 & $msk3))
+  ip="$ip."$(($oct4 & $msk4))
+
+  echo "$ip"
 }
 
 # ARG $1: ip addr
 # ARG $2: net mask
-bcastcalc () {
-    local IFS='.' ip i
-    local -a oct msk
-	
-    read -ra oct <<<"$1"
-    read -ra msk <<<"$2"
+  bcastcalc () {
+    local IFS='.' ip
+    local msk1 msk2 msk3 msk4
+    local oct1 oct2 oct3 oct4
 
-    for i in ${!oct[@]}; do
-        ip+=( "$(( oct[i] + ( 255 - ( oct[i] | msk[i] ) ) ))" )
-    done
+    oct1=`echo "$1" | cut -d '.' -f 1`
+    oct2=`echo "$1" | cut -d '.' -f 2`
+    oct3=`echo "$1" | cut -d '.' -f 3`
+    oct4=`echo "$1" | cut -d '.' -f 4`
 
-    echo "${ip[*]}"
+    msk1=`echo "$2" | cut -d '.' -f 1`
+    msk2=`echo "$2" | cut -d '.' -f 2`
+    msk3=`echo "$2" | cut -d '.' -f 3`
+    msk4=`echo "$2" | cut -d '.' -f 4`
+
+    ip=$(($oct1 + ( 255 - ( $oct1 | $msk1 ) ) ))
+    ip="$ip."$(($oct2 + ( 255 - ( $oct2 | $msk2 ) ) ))
+    ip="$ip."$(($oct3 + ( 255 - ( $oct3 | $msk3 ) ) ))
+    ip="$ip."$(($oct4 + ( 255 - ( $oct4 | $msk4 ) ) ))
+
+    echo "$ip"
+  }
+
+DI_GS_ROOT=/genesis-stack
+
+mkdirs () {
+  if [ ! di ]; then return -1; fi
+
+  mkdir -p "$DI_GS_ROOT/code"
+  mkdir -p "$DI_GS_ROOT/code/lib"
+  mkdir -p "$DI_GS_ROOT/code/bin"
+  mkdir -p "$DI_GS_ROOT/code/environments"
 }
 
+# ARG $1: server base URL
+dl_code () {
+  base_url="$1"
+  if [ ! di ]; then return -1; fi
+
+  mkdirs
+  wget "$base_url/code/lib/general" -O "$DI_GS_ROOT/code/lib/general"
+  wget "$base_url/code/lib/settings" -O "$DI_GS_ROOT/code/lib/settings"
+  wget "$base_url/code/lib/yaml" -O "$DI_GS_ROOT/code/lib/yaml"
+  wget "$base_url/code/lib/disk" -O "$DI_GS_ROOT/code/lib/disk"
+  wget "$base_url/code/lib/net" -O "$DI_GS_ROOT/code/lib/net"
+  wget "$base_url/code/bin/bc" -O "$DI_GS_ROOT/code/bin/bc"
+  wget "$base_url/code/lib/libreadline.so.7.0" -O "$DI_GS_ROOT/code/lib/libreadline.so.7.0"
+  
+  chmod +x "$DI_GS_ROOT/code/bin/bc"
+  ln -s "$DI_GS_ROOT/code/bin/bc" '/bin/bc'
+  ln -s "$DI_GS_ROOT/code/lib/libreadline.so.7.0" '/lib/x86_64-linux-gnu/libreadline.so.7.0'
+  ln -s "$DI_GS_ROOT/code/lib/libreadline.so.7.0" '/lib/x86_64-linux-gnu/libreadline.so.7'
+}
+
+# ARG $1: server base URL
+# ARG $2: env name
+# ARG $3: machine definition name
+dl_def () {
+  if [ ! di ]; then return -1; fi
+
+  local base_url="$1"
+  echo "base_url = $base_url"
+
+  local env_name="$2"
+  echo "env_name = $env_name"
+
+  local mach_def="$3"
+  echo "mach_def = $mach_def"
+
+  mkdirs
+  env_path="$DI_GS_ROOT/environments/$env_name"
+  mach_path="$DI_GS_ROOT/environments/$env_name/$mach_def"
+  mkdir -p "$mach_path"
+
+  wget "$base_url/environments/disk-strategy.yml" -O "$DI_GS_ROOT/environments/disk-strategy.yml"
+
+  if [ $? -eq 8 ]; then
+    wget "$base_url/code/environments/disk-strategy.yml" -O "$DI_GS_ROOT/code/environments/disk-strategy.yml"
+  fi
+
+  wget "$base_url/environments/file-systems.yml" -O "$DI_GS_ROOT/environments/file-systems.yml"
+
+  if [ $? -eq 8 ]; then
+    wget "$base_url/code/environments/file-systems.yml" -O "$DI_GS_ROOT/code/environments/file-systems.yml"
+  fi
+
+  wget "$base_url/environments/$env_name/environment.yml" -O "$DI_GS_ROOT/environments/$env_name/environment.yml"
+  wget "$base_url/environments/$env_name/environment" -O "$DI_GS_ROOT/environments/$env_name/environment"
+  wget "$base_url/environments/$env_name/effective.keys" -O "$DI_GS_ROOT/environments/$env_name/effective.keys"
+  wget "$base_url/environments/$env_name/authorized_keys" -O "$DI_GS_ROOT/environments/$env_name/authorized_keys"
+  wget "$base_url/environments/$env_name/hosts" -O "$DI_GS_ROOT/environments/$env_name/hosts"
+  wget "$base_url/environments/$env_name/ssh_config" -O "$DI_GS_ROOT/environments/$env_name/ssh_config"
+  wget "$base_url/environments/$env_name/$mach_def/drives.yml" -O "$DI_GS_ROOT/environments/$env_name/$mach_def/drives.yml"
+  wget "$base_url/environments/$env_name/$mach_def/machine.yml" -O "$DI_GS_ROOT/environments/$env_name/$mach_def/machine.yml"
+  wget "$base_url/environments/$env_name/$mach_def/nics.yml" -O "$DI_GS_ROOT/environments/$env_name/$mach_def/nics.yml"
+  wget "$base_url/environments/$env_name/$mach_def/effective.keys" -O "$DI_GS_ROOT/environments/$env_name/$mach_def/effective.keys"
+  wget "$base_url/environments/$env_name/$mach_def/preseed.cfg" -O "$DI_GS_ROOT/environments/$env_name/$mach_def/preseed.cfg"
+
+  wget "$base_url/environments/$env_name/$mach_def/postinst" -O "$DI_GS_ROOT/environments/$env_name/$mach_def/postinst"
+  chmod +x "$DI_GS_ROOT/environments/$env_name/$mach_def/postinst"
+
+  wget "$base_url/environments/$env_name/$mach_def/postinst-in-target" -O "$DI_GS_ROOT/environments/$env_name/$mach_def/postinst-in-target"
+  chmod +x "$DI_GS_ROOT/environments/$env_name/$mach_def/postinst-in-target"
+
+  wget "$base_url/environments/$env_name/$mach_def/post-partition" -O "$DI_GS_ROOT/environments/$env_name/$mach_def/post-partition"
+  chmod +x "$DI_GS_ROOT/environments/$env_name/$mach_def/post-partition"
+}
+
+# ARGS: none
+# Extracts query parameters defined in settings.xml and builds a query string
+query_string () {
+  local qs
+
+  for key in $query_string_keys; do
+    value="$(eval \$$key)"
+
+    if [ -n "$value" ]; then
+      qs="$qs$key=$value"'&'
+    fi
+  done
+
+  qs=$(echo "$qs" | sed 's/&$//')
+  return "$qs"
+}
+
+# TODO - test it
+
+# ARG $1: the path
+# ARG $2: [optional] the URL base (extracts from $base_url if present)
+#         which is http://SERVER:PORT without the extra '/' at the end
+wget_path () {
+  local path="$1"
+  local base=''
+
+  if [ -z "$2" ]; then
+    base="$base_url"
+  else
+    base="$2"
+  fi
+  
+  path="$(echo $path | sed -e 's@^/@@')"
+  wget "$base/$path?$(query_string)"
+}
 

@@ -1,64 +1,81 @@
-#!/bin/sh
 
 # 
 # WARNING: This library was designed to run inside BusyBox (ash shell)
 # -------  so make sure changes don't break that!
 # 
 
+# copied from general to reduce dependencies
+trim () {
+    echo "$1" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+}
+
 # ARGS: $1 - model string from parted i.e. ATA KINGSTON SV300S3, ATA ST3000DM001-1CH1 etc
 # OUTPUTS: the proper name of the vendor
 disk_vendor () {
-    if [ -n "`echo $1 | egrep '^(ATA) +ST'`" ]; then
-        echo SEAGATE
-    fi
+  if [ -n "`echo $1 | egrep '^(ATA) +ST'`" ]; then
+    echo SEAGATE
+  fi
 
-    if [ -n "`echo $1 | grep -i kingston`" ]; then
-        echo KINGSTON
-    fi
+  if [ -n "`echo $1 | grep -i kingston`" ]; then
+    echo KINGSTON
+  fi
 
-    if [ -n "`echo $1 | grep -i ocz`" ]; then
-        echo OCZ
-    fi
+  if [ -n "`echo $1 | grep -i ocz`" ]; then
+    echo OCZ
+ fi
 }
 
 # ARGS: $1 - model string from parted i.e. ATA KINGSTON SV300S3, ATA ST3000DM001-1CH1 etc
 # OUTPUTS: the proper name of the model
 disk_model () {
-    local vendor=$(disk_vendor "$1")
-    echo $1 | sed -e 's/ATA //g' -e 's/'$vendor'//g' -e 's/ //g' -e 's/-.*//'
+  local vendor=$(disk_vendor "$1")
+  echo $1 | sed -e 's/ATA //g' -e 's/'$vendor'//g' -e 's/ //g' -e 's/-.*//'
 }
 
 # ARGS: $1 - simple device name after /dev/: i.e. sda
 # OUTPUTS: [ata | usb] or zero string
 disk_bus () {
-    udevadm info --query=property --path=/sys/block/$1 | grep ^ID_BUS | cut -d '=' -f 2
+  udevadm info --query=property --path=/sys/block/$1 | grep ^ID_BUS | cut -d '=' -f 2
 }
 
 # ARGS: none
-# OUTPUTS: list of block sys devices one per line or zero string: i.e. /sys/block/sdc
+# OUTPUTS: list of scsi block deviceIds one per line or zero string: i.e. /sys/block/sdc
+disk_scsi_drives () {
+  local device='';
+  for device in /sys/block/*; do
+    if udevadm info --query=property --path="$device" | grep -q '^ID_BUS=scsi'; then
+      echo $(basename $device);
+    fi;
+  done
+}
+
+# ARGS: none
+# OUTPUTS: list of scsi block deviceIds one per line or zero string: i.e. /sys/block/sdc
 disk_ata_drives () {
-    for device in /sys/block/*; do
-        if udevadm info --query=property --path=$device | grep -q ^ID_BUS=ata; then
-            echo $device;
-        fi;
-    done
+  local device='';
+  for device in /sys/block/*; do
+    if udevadm info --query=property --path="$device" | grep -q '^ID_BUS=ata'; then
+      echo $(basename $device);
+    fi;
+  done
 }
 
 # ARGS: none
 # OUTPUTS: the device if any or zero string: i.e. /dev/sdc
 disk_usb_drive () {
-    for device in /sys/block/*; do
-        if udevadm info --query=property --path=$device | grep -q ^ID_BUS=usb; then
-            echo $device;
-            return
-        fi;
-    done
+  local device=''
+  for device in /sys/block/*; do
+    if udevadm info --query=property --path="$device" | grep -q '^ID_BUS=usb'; then
+      echo $(basename $device);
+      return
+    fi;
+  done
 }
 
 # ARGS: $1 the simple device name: i.e. sda
 # OUTPUTS: the udev device path
 disk_dev_path () {
-    udevadm info --query=property --path=/sys/block/"$1" | grep -i devpath | cut -d '=' -f 2
+  udevadm info --query=property --path=/sys/block/"$1" | grep -i devpath | cut -d '=' -f 2
 }
 
 #
@@ -67,27 +84,383 @@ disk_dev_path () {
 
 # ARGS $1: the drive device i.e. /dev/sda to write GPT partition to
 fdisk_gpt () {
+  local dev="$1"
+
+  if [ -z "$(echo $1 | egrep '^/dev/')" ]; then
+    dev="/dev/$1"
+  fi
+
 echo "g
 w
-"|fdisk "$1"
+"|fdisk "$dev"
 }
 
 # ARGS $1: the drive device i.e. /dev/sda to delete a partition from
 fdisk_del () {
+  local dev="$1"
+
+  if [ -z "$(echo $1 | egrep '^/dev/')" ]; then
+    dev="/dev/$1"
+  fi
+
 echo "d
 w
-"|fdisk "$1"
+"|fdisk "$dev"
+}
+
+# ARGS $1: the partition device ID i.e. sda1 to explicitly delete
+fdisk_part_del () {
+  local dev="$1"
+  local part="$(echo $dev | egrep -o '[1-9]+$')"
+
+  if [ -z "$(echo $1 | egrep '^/dev/')" ]; then
+    dev="/dev/$1"
+  fi
+
+echo "d
+$part
+w
+"|fdisk "$dev"
 }
 
 # ARGS $1: the drive device i.e. /dev/sda to create a RAID partition on
-fdisk_raid () {
+fdisk_raid_p1 () {
+  local dev="$1"
+  local code="fd"
+
+  if [ "$(pttype $1)" == "gpt" ]; then
+    code="29"
+  fi
+
+  if [ -z "$(echo $1 | egrep '^/dev/')" ]; then
+    dev="/dev/$1"
+  fi
+
 echo "n
 p
-1
+
 
 
 t
-29
+$code
 w
-"|fdisk "$1"
+"|fdisk "$dev"
+}
+
+# ARGS $1: the drive device i.e. /dev/sda to create a RAID partition on
+fdisk_raid_p2 () {
+  local dev="$1"
+  local code="fd"
+
+  if [ "$(pttype $1)" == "gpt" ]; then
+    code="29"
+  fi
+
+  if [ -z "$(echo $1 | egrep '^/dev/')" ]; then
+    dev="/dev/$1"
+  fi
+echo "n
+p
+
+
+
+t
+
+$code
+w
+"|fdisk "$dev"
+}
+
+
+# ARGS $1: the drive device i.e. /dev/sda to create a primary partition on
+# ARGS $2: the size of the partition in sectors or in bytes scale accepted by fdisk
+fdisk_primary () {
+  local dev="$1"
+  local sectors="$2"
+
+  if [ -z "$(echo $1 | egrep '^/dev/')" ]; then
+    dev="/dev/$1"
+  fi
+
+
+  if [ -n "$sectors" ]; then
+echo "n
+p
+
+
++$sectors
+w
+"|fdisk "$dev"
+  else 
+echo "n
+p
+
+
+
+w
+"|fdisk "$dev"
+  fi
+}
+
+# ARGS $1: the drive device to get the partition type of: gpt or dos
+pttype () {
+  local dev="$1"
+
+  if [ -z "$(echo $1 | egrep '^/dev/')" ]; then
+    dev="/dev/$1"
+  fi
+
+  fdisk -l "$dev" | egrep '^Disklabel type:' | sed -e 's/Disklabel type: //'
+}
+
+# ARGS $1: the drive device i.e. /dev/sda to create a LVM partition on
+# ARGS $2: the size in sectors or megabytes
+fdisk_lvm_p1 () {
+  local dev="$1"
+  local sectors="$2"
+  local code="8e"
+
+  if [ "$(pttype $1)" == "gpt" ]; then
+    code="31"
+  fi
+
+  if [ -z "$(echo $1 | egrep '^/dev/')" ]; then
+    dev="/dev/$1"
+  fi
+
+ if [ -n "$sectors" ]; then
+echo "n
+p
+
+
++$sectors
+t
+$code
+w
+"|fdisk "$dev"
+  else 
+echo "n
+p
+
+
+
+t
+$code
+w
+"|fdisk "$dev"
+  fi
+}
+
+
+# ARGS $1: the drive device i.e. /dev/sda to create a LVM partition on
+# ARGS $2: the size in sectors or megabytes
+fdisk_lvm_p2 () {
+  local dev="$1"
+  local sectors="$2"
+  local code="8e"
+
+  if [ -z "$(echo $1 | egrep '^/dev/')" ]; then
+    dev="/dev/$1"
+  fi
+
+  if [ "$(pttype $1)" == "gpt" ]; then
+    code="31"
+  fi  
+
+ if [ -n "$sectors" ]; then
+echo "n
+p
+
+
++$sectors
+t
+
+$code
+w
+"|fdisk "$dev"
+  else 
+echo "n
+p
+
+
+
+t
+
+$code
+w
+"|fdisk "$dev"
+  fi
+}
+
+# ARGS: none, backs up the root filesystem
+# Presumes a single USB drive is attached
+back2usb () {
+  # 4th USB drive partition for backup (created in process)
+  local partition='/dev/'"$(disk_usb_drive)"4
+  mount "$partition" /mnt
+  mkdir /mnt/root
+
+  # Unmount boot and backup
+  umount -l /target/boot
+  cd /target
+  tar cf - . | (cd /mnt/root && tar xf -)
+  cd /
+}
+
+# Unmounts (forcefully) all filesystems and swap 
+unmount_fs () {
+  swap_dev="$(lvdisplay | grep swap | sed -e 's/ //g' | grep LVPath | sed -e 's/LVPath//g')"
+  swapoff "$swap_dev"
+  umount -l /dev/.static/dev
+  umount -l /target
+}
+
+# Wipes clean all lvm entities
+wipe_lvm () {
+  cd /
+
+  # back up to reconstruct
+  lvdisplay > /mnt/lvdisplay.out
+  lvs > /mnt/lvs.out
+  vgdisplay > /mnt/vgdisplay.out
+  vgs > /mnt/vgs.out
+
+  vg="$(vgs | grep -v '#PV' | sed -e 's/  //g' | cut -d ' ' -f 1)"
+  lvs="$(lvs | grep -v 'LSize' | sed -e 's/  //g' | cut -d ' ' -f 1)"
+  pv="$(pvdisplay | sed -e 's/ //g' | grep PVName | sed -e 's/PVName//g')"
+
+  for lv in $lvs; do
+    lvremove -f "/dev/$vg/$lv"
+  done
+
+  vgremove -f $vg
+  pvremove $pv
+}
+
+# Lists all drives by deviceId minus USB and cdrom
+list_drives () {
+  local cdrom='sr0'
+  local usb=$(disk_usb_drive)
+  local drives=''
+
+  for d in $(disk_scsi_drives); do
+    if [ "$d" != "$cdrom" -a "$d" != "$usb" ]; then
+      drives="$drives $d"
+    fi
+  done
+
+  for d in $(disk_ata_drives); do
+    if [ "$d" != "$cdrom" -a "$d" != "$usb" ]; then
+      drives="$drives $d"
+    fi
+  done
+
+  echo $(trim "$drives")
+}
+
+# ARG $1: optional, anything non-zero prints histogram with counts field,
+#         without it prints just the unique capacities
+# OUPUTS: Lists unique disk capacities (not USB) as reported by parted_devices
+#         in DI with total device count for each capacity. The size output is
+#         in bytes (original figure from parted_devices) for the disks. The 
+#         same disks should report the same capacities.  
+uniq_capacities () {
+  if [ -n "$1" ]; then
+    parted_devices | grep -v $(disk_usb_drive) | sed -e 's/\t/ /g' | cut -d' ' -f2 | sort | uniq -c
+  else
+    parted_devices | grep -v $(disk_usb_drive) | sed -e 's/\t/ /g' | cut -d' ' -f2 | sort | uniq
+  fi
+}
+
+drives_for_capacity () {
+    local cap="$1"
+    parted_devices | grep -v $(disk_usb_drive) | grep $cap | sed -e 's/\t/ /g' -e 's@/dev/@@' | cut -d' ' -f1
+}
+
+drive_sets () {
+  local cap=0
+  local drives=''
+  local count=0
+
+  for cap in $(uniq_capacities); do
+    cap=$(trim $cap)
+    for d in $(drives_for_capacity $cap); do
+      d=$(trim $d)
+      drives="$drives,$d"
+      count=$((count + 1))
+    done
+      
+    drives=$(echo $drives | sed -e 's/^,//')
+    cap=$((cap / 1024 / 1024))
+    echo "$cap $count $drives"
+    drives=''
+    count=0
+  done
+}
+
+# ARG $1: the deviceId of the drive (i.e. sda)
+# OUTPUT: the size of the drive in Megabytes (1024 not 1000 based)
+# Uses parted_devices available in DI to get drive capacity
+parted_capacity () {
+  local capacity=0
+  local drive="$1"
+
+  capacity="$(parted_devices | grep $drive | sed -e 's/\t/ /g' | cut -d' ' -f2)"
+  capacity=$((capacity / 1024 / 1024))
+  echo "$capacity"
+}
+
+boot_partition () {
+    df -h /target/boot | grep /target/boot | cut -d ' ' -f1
+}
+
+boot_drive () {
+    boot_partition | sed -e 's@/dev/@@' | egrep -o '[a-z]{3}'
+}
+
+build_md0 () {
+  local devs="$1"
+}
+
+# ARG $1: a list of devices in the raid set to create
+build_md1 () {
+  local devs="$1"
+}
+
+calc_sys_size () {
+  local ratio="$1"
+  local total="$2"
+  local sys_part="$(echo $ratio | cut -d ':' -f 1)"
+  local data_part="$(echo $ratio | cut -d ':' -f 2)"
+  local total_parts="$((sys_part + data_part))"
+  local sys_part_float="$(echo $sys_part / $total_parts | bc -l)"
+  echo 'scale=0; '"$sys_part_float * $total" | bc -l | cut -d '.' -f 1
+}
+
+size_difference () {
+    local smaller
+    local larger
+    local diff
+
+    if [ $1 -gt $2 ]; then
+      larger="$1"
+      smaller="$2"
+    else 
+      larger="$2"
+      smaller="$1"
+    fi
+
+    echo "scale=2; ( ( $larger - $smaller ) / $larger ) * 100" | bc -l
+}
+
+# ARG $1: the drive's deviceId (i.e. sda, sdc, etc)
+# OUTPUT: the unmodified parted_devices value in bytes for the drive capacity
+drive_capacity () {
+  parted_devices | grep "$1" | sed -e 's/\t/ /g' | cut -d' ' -f2
+}
+
+# ARG $1: the file system device
+# ARG $2: the file system type string (ext4, ext3, ext2, btrfs, fat, jfs, xfs)
+mkfs () {
+  mkfs."$2" -f 
 }
