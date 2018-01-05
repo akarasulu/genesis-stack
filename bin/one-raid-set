@@ -108,7 +108,8 @@ fi
 
 # if includes boot drive, then second part is raid, otherwise first
 raid_part=1
-if [ -n "$(echo $act_md0_drives | grep $boot_drive)" ]; then
+boot_drive_dev_id="$(echo $boot_drive | sed -e 's@/dev/@@')"
+if [ -n "$(echo $act_md0_drives | grep $boot_drive_dev_id)" ]; then
   raid_part=2
 fi
 
@@ -117,7 +118,7 @@ debug_step postinst_parts_one_raid_set_create_raidset
 md0_raid_devs=''
 info "Starting partitioning on md0 devices: $act_md0_drives"
 for d in $act_md0_drives; do
-  if [ "$d" == "$boot_drive" -a $raid_part -eq 2 ]; then
+  if [ "/dev/$d" == "$boot_drive" -a $raid_part -eq 2 ]; then
     info "First primary partition ($boot_part) already exists on the boot drive ($d)."
     info "Need to delete extended partitions"
 
@@ -144,7 +145,7 @@ done
 
 level="$(echo $md0 | sed -e 's/^rl//')"
 info "Creating RAID Level $level md0 device"
-mdadm --create /dev/md0 --level=$level --raid-devices=$act_md0_drive_count $md0_raid_devs
+echo yes | mdadm --create /dev/md0 --level=$level --raid-devices=$act_md0_drive_count $md0_raid_devs
 
 md0_size=0
 if [ $level -eq 0 ]; then
@@ -179,7 +180,7 @@ if [ "$ratio" != "na" -a "$sys" == "md0" -a "$data" == "md0" ]; then
   # Data VG
   pvcreate -f -y /dev/md0p1
   vgcreate data /dev/md0p1
-elif [ $other_drive_size -lt $act_md0_drive_sizes -a "$boot_drive" == "$other_drive" ]; then
+elif [ $other_drive_size -lt $act_md0_drive_sizes -a "$boot_drive_dev_id" == "$other_drive" ]; then
   # other drive is SSD, md0 on HDD
   fdisk_primary /dev/$other_drive
 

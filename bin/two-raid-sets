@@ -80,7 +80,7 @@ debug_step postinst_parts_two_raidsets_create_raidsets
 md0_raid_devs=''
 info "Starting partitioning on md0 devices: $cal_md0_drives"
 for d in $cal_md0_drives; do
-  if [ "$d" == "$boot_drive" ]; then
+  if [ "/dev/$d" == "$boot_drive" ]; then
     info "First primary partition ($boot_part) already exists on the boot drive ($d)."
     info "Need to delete extended partitions"
     fdisk_part_del "/dev/$d"'5'
@@ -100,7 +100,7 @@ done
 
 level="$(echo $md0 | sed -e 's/^rl//')"
 info "Creating RAID Level $level md0 device"
-mdadm --create /dev/md0 --level=$level --raid-devices=$cal_md0_drive_count $md0_raid_devs
+echo yes | mdadm --create /dev/md0 --level=$level --raid-devices=$cal_md0_drive_count $md0_raid_devs
 
 md1_raid_devs=''
 info "Starting partitioning on md1 devices: $cal_md1_drives"
@@ -117,7 +117,7 @@ done
 
 level="$(echo $md1 | sed -e 's/^rl//')"
 info "Creating RAID Level $level md1 device"
-mdadm --create /dev/md1 --level=$level --raid-devices=$cal_md1_drive_count $md1_raid_devs
+echo yes | mdadm --create /dev/md1 --level=$level --raid-devices=$cal_md1_drive_count $md1_raid_devs
 
 # 
 # Create PV, and VG

@@ -26,7 +26,7 @@ subs () {
 
 # ARGS $1: the text to trim whitespace and quotes out of 
 # OUTPUT : whitespace at ends trimed with single quotes removed
-trim () {
+yaml_trim () {
     echo "$1" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e "s/'//g"
 }
 
@@ -133,9 +133,9 @@ rec () {
       continue
     elif [ $rec -eq $ii ]; then
       key=$(key "$line")
-      key=$(trim "$key")
+      key=$(yaml_trim "$key")
       value=$(value "$line")
-      value=$(trim "$value")
+      value=$(yaml_trim "$value")
       eval "$key"=\"$value\"
     fi
 

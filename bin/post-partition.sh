@@ -78,8 +78,18 @@ mach_dir="\$env_dir/$mach_def"
 
 # Find values for installation
 boot_part="\$(boot_partition)"
+
+# Let's presume if we cannot detect (we know installer does this)
+if [ -z "\$boot_part" ]; then
+  boot_part='/dev/sda1'
+fi
+
 boot_drive="\$(boot_drive)"
-boot_sectors="\$(fdisk -s $boot_part)"
+if [ -z "\$boot_drive" ]; then
+  boot_drive='/dev/sda'
+fi
+
+boot_sectors="\$(fdisk -s \$boot_part)"
 boot_size=\$((boot_sectors * 2))
 
 # Selected strategy variables

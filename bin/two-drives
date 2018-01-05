@@ -105,7 +105,8 @@ fi
 
 debug_step postinst_parts_two_drives_changes
 
-if [ "$boot_drive" == "$act_sys_drive_dev_id" ]; then
+boot_drive_dev_id="$(echo $boot_drive | sed -e 's@/dev/@@')"
+if [ "$boot_drive_dev_id" == "$act_sys_drive_dev_id" ]; then
   info "The boot partition is on the sys drive $act_sys_drive_dev_id"
   fdisk_part_del '/dev/'$act_sys_drive_dev_id'5'
   fdisk_part_del '/dev/'$act_sys_drive_dev_id'2'

@@ -1,17 +1,17 @@
---- should always be first
+---
 name: 'root'
 mountPoint: '/'
 type: 'ext4'
 size: 8192
 vg: 'sys'
 
---- not really used
+---
 name: 'boot'
 mountPoint: '/boot'
 type: 'ext4'
 size: 256
 
---- can use actual mb based value or % of system memory
+---
 name: 'swap'
 size: '200%'
 
@@ -57,17 +57,16 @@ type: 'ext4'
 size: 102400
 vg: 'data'
 
---- this and other nested fs should be last after parent
+---
 name: 'usr_local'
 mountPoint: '/usr/local'
 type: 'ext4'
 size: 100
 vg: 'sys'
 
---- this and other nested fs should be last after parent
+---
 name: 'opt_local'
 mountPoint: '/opt/local'
 type: 'ext4'
 size: 100
 vg: 'sys'
-

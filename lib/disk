@@ -110,13 +110,13 @@ w
 
 # ARGS $1: the partition device ID i.e. sda1 to explicitly delete
 fdisk_part_del () {
-  local dev="$1"
-  local part="$(echo $dev | egrep -o '[1-9]+$')"
+  local part="$(echo $1 | egrep -o '[0-9]+$')"
+  local dev="$(echo $1 | sed -e 's/[0-9]\+$//')"
 
-  if [ -z "$(echo $1 | egrep '^/dev/')" ]; then
-    dev="/dev/$1"
+  if [ -z "$(echo $dev | egrep '^/dev/')" ]; then
+    dev="/dev/$dev"
   fi
-
+  echo "dev = $dev, part = $part" 
 echo "d
 $part
 w

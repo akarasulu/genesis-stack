@@ -26,20 +26,23 @@ fstab="$fstab_ori"
 file_systems="$base_dir/file-systems.yml"
 records=$(count "$file_systems")
 
-int ii=0
-while [ $ii -lt records ]; do
+ii=0
+while [ $ii -lt $records ]; do
   rec $ii "$file_systems"
 
-  debug_step postinst_lvfs_create_$name "name=$name, mountPoint=$mountPoint, type=$type, size=$size, rec=$ii"
+  debug_step postinst_lvfs_create_$name "name=$name, mountPoint=$mountPoint, type=$type, vg=$vg, size=$size, rec=$ii"
   
   if [ "$name" == "swap" ]; then
     info "Creating the swap logical volume"
     act_size=$size
 
     if [ -n "$(echo size | grep %)" ]; then
+      act_size="$(echo size | grep %)"
+
       mem=$(grep MemTotal: /proc/meminfo | sed -e 's/ //g' -e 's/kB//' | cut -d':' -f2)
       mem=$((mem / 1024))
-      act_size=$((size / 100 * mem))
+      act_size=$((act_size / 100 * mem))
+
       info "Using percent specifier ($size) for swap logical volume size of $act_size"
     else
       info "Using amount specifier ($size) for swap logical volume size"
@@ -62,29 +65,31 @@ while [ $ii -lt records ]; do
 
     echo "/dev/mapper/$vg-vm $mountPoint $type defaults 0 2" >> "$fstab"
   else
-    lvcreate -n $name -L $size'M'
-    mkfs."$type" -F -F -L $name /dev/$vg/$name
-    src=/mnt/root"$mountPoint"
-    dst=/target"$mountPoint"
+    lvcreate -n "$name" -L "$size"'M' "$vg"
+    mkfs."$type" -F -F -L "$name" "/dev/$vg/$name"
+    src="/mnt/root$mountPoint"
+    dst="/target$mountPoint"
 
     mkdir -p "$dst" 
     mkdir -p "$src"
 
-    mount /dev/$vg/$name "$dst"
+    mount "/dev/$vg/$name" "$dst"
 
     # We handle root last
     if [ "$name" != "root" ]; then
-        cd /mnt/root"$mountPoint"
-        tar cf - . | (cd "$dst" && tar xf -)
+      cd "/mnt/root$mountPoint"
+      tar cf - . | (cd "$dst" && tar xf -)
         
-        rm -rf /mnt/root"$mountPoint"
-        sync
-        umount /dev/$vg/$name
+      rm -rf "/mnt/root$mountPoint"
+      sync
+      umount -l "$dst"
 
-        # Add entries into fstab
-        echo "/dev/mapper/$vg-$name $mountPoint $type defaults 0 2" >> "$fstab"
+      # Add entries into fstab
+      echo "/dev/mapper/$vg-$name $mountPoint $type defaults 0 2" >> "$fstab"
     fi
   fi
+
+  ii=$((ii + 1))
 done
 
 debug_step postinst_lvfs_restore_root
