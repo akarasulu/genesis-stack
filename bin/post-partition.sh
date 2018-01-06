@@ -15,7 +15,6 @@ script="$mach_def_path/post-partition"
 strategy="$environments/disk-strategy.yml"
 drives="$mach_def_path/drives.yml"
 
-ii=0
 count=$(count $drives)
 
 declare -a all_drives
@@ -23,6 +22,7 @@ declare -a ssd_drives
 declare -A capacities
 declare -a hdd_drives
 
+ii=0
 while [ $ii -lt $count ]; do
   rec "$ii" "$drives"
   if [ "$is_rotational" == "true" ]; then
@@ -32,6 +32,8 @@ while [ $ii -lt $count ]; do
   fi
 
   all_drives+=("$deviceId")
+  debug "all_drives = ${all_drives[@]}"
+  debug "all_drives size = ${#all_drives[@]}"
   capacities+=(["$deviceId"]="$capacity")
   ((ii++))
 done
@@ -122,7 +124,7 @@ EOF
 
 if [ "${#all_drives[@]}" -eq 1 ]; then
   exp_drive_dev_id="${all_drives[0]}"
-  exp_drive_capacity="${capacities[exp_drive_dev_id]}"
+  exp_drive_capacity="${capacities[$exp_drive_dev_id]}"
 
   cat >> $script <<-EOF
 exp_total_drive_count=1
@@ -139,20 +141,20 @@ fi
 # Two Drives: NO RAID
 #
 
-if [ "${#all_drives[@]}" -eq 2 -a "$md0" == "no" -a "$md1" == "no" ]; then
+if [ ${#all_drives[@]} -eq 2 -a "$md0" == "no" -a "$md1" == "no" ]; then
   # Presuming the smaller drive is the SSD for Sys
-  if [ "${capacities[all_drives[0]]}" -lt "${capacities[all_drives[1]]}" ]; then
+  if [ ${capacities[all_drives[0]]} -lt ${capacities[all_drives[1]]} ]; then
     exp_sys_drive_dev_id="${all_drives[0]}"
-    exp_sys_drive_capacity="${capacities[all_drives[0]]}"
+    exp_sys_drive_capacity="${capacities[$exp_sys_drive_dev_id]}"
 
-    exp_sys_drive_dev_id="${all_drives[1]}"
-    exp_sys_drive_capacity="${capacities[all_drives[1]]}"
+    exp_data_drive_dev_id="${all_drives[1]}"
+    exp_data_drive_capacity="${capacities[$exp_data_drive_dev_id]}"
   else
     exp_sys_drive_dev_id="${all_drives[1]}"
-    exp_sys_drive_capacity="${capacities[all_drives[1]]}"
+    exp_sys_drive_capacity="${capacities[$exp_sys_drive_dev_id]}"
 
-    exp_sys_drive_dev_id="${all_drives[0]}"
-    exp_sys_drive_capacity="${capacities[all_drives[0]]}"
+    exp_data_drive_dev_id="${all_drives[0]}"
+    exp_data_drive_capacity="${capacities[$exp_data_drive_dev_id]}"
   fi
 
   cat >> $script <<-EOF

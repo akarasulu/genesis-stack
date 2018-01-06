@@ -3,6 +3,10 @@
 # Functions
 #
 
+if [ -z "$loglevel" ]; then
+  loglevel=4
+fi
+
 di () {
   test -d /target
 }
@@ -20,15 +24,27 @@ trim () {
 }
 
 err () {
-   echo "[ERROR] $@" >&2
+   if [ $loglevel -gt 0 ]; then
+     echo "[ERROR] $@" >&2
+   fi
 }
 
 warn () {
-   echo "[WARNING] $@" >&2
+   if [ $loglevel -gt 1 ]; then
+     echo "[WARNING] $@" >&2
+   fi
 }
 
 info () {
-   echo "[INFO] $@" >&2
+   if [ $loglevel -gt 2 ]; then
+     echo "[INFO] $@" >&2
+   fi
+}
+
+debug () {
+   if [ $loglevel -gt 3 ]; then
+     echo "[DEBUG] $@" >&2
+   fi
 }
 
 # ARGS: $1 - normalize size values into megabytes 3 TB, 3000GB, 23949583M etc
@@ -83,7 +99,7 @@ debug_step () {
   done
 }
 
-debug () {
+debug_loop () {
   echo "[DEBUG] Debug loop started." >&2
   while true; do
     sleep 1;

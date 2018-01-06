@@ -35,8 +35,12 @@ ram=`cat $mach_dbf | grep ram: | awk '{print $2}'`
 declare -a drives
 
 drive_count=$(count "$drives_dbf")
+
+debug "drive_count = $drive_count"
+debug "mach_def_path = $mach_def_path"
+
 ii=0
-while [ $ii -lt 6 ]; do
+while [ $ii -lt $drive_count ]; do
   rec "$ii" "$drives_dbf"
   if [ "$is_rotational" == "true" ]; then
     image="$mach_def_path/hdd-$deviceId.qcow2"
@@ -53,6 +57,8 @@ while [ $ii -lt 6 ]; do
   drives+=("$image")
   ((ii++))
 done
+
+debug "drives collected = ${#drives[@]}"
 
 index=1
 devices=''

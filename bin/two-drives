@@ -111,25 +111,25 @@ if [ "$boot_drive_dev_id" == "$act_sys_drive_dev_id" ]; then
   fdisk_part_del '/dev/'$act_sys_drive_dev_id'5'
   fdisk_part_del '/dev/'$act_sys_drive_dev_id'2'
   fdisk_primary '/dev/'$act_sys_drive_dev_id
-  pvcreate -f -y  '/dev/'$act_sys_drive_capacity'2'
-  vgcreate sys '/dev/'$act_sys_drive_capacity'2'
+  pvcreate -f -y  '/dev/'$act_sys_drive_dev_id'2'
+  vgcreate sys '/dev/'$act_sys_drive_dev_id'2'
 
   fdisk_gpt '/dev/'$act_data_drive_dev_id
   fdisk_primary '/dev/'$act_data_drive_dev_id
-  pvcreate -f -y '/dev/'$act_data_drive_capacity'1'
-  vgcreate data '/dev/'$act_data_drive_capacity'1'
+  pvcreate -f -y '/dev/'$act_data_drive_dev_id'1'
+  vgcreate data '/dev/'$act_data_drive_dev_id'1'
 else
   info "The boot partition is on the data drive $act_sys_drive_dev_id"
   fdisk_part_del '/dev/'$act_data_drive_dev_id'5'
   fdisk_part_del '/dev/'$act_data_drive_dev_id'2'
   fdisk_primary '/dev/'$act_data_drive_dev_id
-  pvcreate -f -y  '/dev/'$act_data_drive_capacity'2'
-  vgcreate sys '/dev/'$act_data_drive_capacity'2'
+  pvcreate -f -y  '/dev/'$act_data_drive_dev_id'2'
+  vgcreate sys '/dev/'$act_data_drive_dev_id'2'
 
   fdisk_gpt '/dev/'$act_sys_drive_dev_id
   fdisk_primary '/dev/'$act_sys_drive_dev_id
-  pvcreate -f -y '/dev/'$act_sys_drive_capacity'1'
-  vgcreate data '/dev/'$act_sys_drive_capacity'1'
+  pvcreate -f -y '/dev/'$act_sys_drive_dev_id'1'
+  vgcreate data '/dev/'$act_sys_drive_dev_id'1'
 fi
 
 debug_step postinst_parts_two_drives_finish

@@ -6,5 +6,6 @@ vagrant_provider: 'libvirt'
 environments: 'environments'
 add_authorized_keys: '~/.ssh/id_rsa.pub'
 query_string_keys: 'env_name mach_def ip_addr mac_addr state action log message'
+loglevel: 1
 debug: 'disabled'
 
