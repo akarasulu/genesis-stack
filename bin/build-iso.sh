@@ -57,7 +57,7 @@ if [ ! $? -eq 0 ]; then
 fi
 
 echo "Checking and starting virtual machine ..."
-vm_run  3>&1 1>&2 2>&3 3>&- | grep -v nokogiri
+vm_run
 if [ ! $? -eq 0 ]; then
   echo "Failed to bring the virtual machine to a running state."
   exit $?
@@ -66,7 +66,7 @@ fi
 echo "Building ISO installer ..."
 pushd .
 cd $TOP_DIR
-vagrant ssh -c "/var/www/html/code/bin/vagrant-build.sh $env_name $mach_def" 3>&1 1>&2 2>&3 3>&- | grep -v nokogiri
+vm_build_iso
 if [ ! $? -eq 0 ]; then
   echo "Failed while building ISO installer in the virtual machine."
   exit $?

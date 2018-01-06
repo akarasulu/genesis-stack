@@ -159,8 +159,13 @@ mount --bind /proc /target/proc
 mount --bind /dev  /target/dev
 mount --bind /sys  /target/sys
 
+mdadm --detail --scan >> /target/etc/mdadm/mdadm.conf
+echo "RESUME=/dev/mapper/sys-swap" > /target/etc/initramfs-tools/conf.d/resume
+echo 'GRUB_CMDLINE_LINUX="root=/dev/mapper/sys-root"' >> /target/etc/default/grub
+
 debug_step postinst_grub
 
-chroot /target grub-install /dev/sda
+chroot /target update-initramfs -u
+chroot /target update-grub2
 
 debug_step postinst_lvfs_finish

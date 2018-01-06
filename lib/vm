@@ -16,7 +16,7 @@ fi
 function vm_status() {
   vagrant status default | \
     egrep '^default[[:space:]]+(running|not created|shutoff)[[:space:]]+\(.*\)' | \
-    sed -e 's/^default[[:space:]]*//' -e 's/ (.*)//' 3>&1 1>&2 2>&3 3>&- | grep -v nokogiri
+    sed -e 's/^default[[:space:]]*//' -e 's/ (.*)//' 2>&1 | grep -v nokogiri
 }
 
 # ARGS: none
@@ -26,9 +26,9 @@ function vm_run() {
 
   if [ "$vm_state" != "running" ]; then
     if [ "$vm_state" == "shutoff" ]; then
-      vagrant up 3>&1 1>&2 2>&3 3>&- | grep -v nokogiri
+      vagrant up 2>&1 | grep -v nokogiri
     elif [ "$vm_state" == "not created" ]; then
-      vagrant up --provider "$vagrant_provider" 3>&1 1>&2 2>&3 3>&- | grep -v nokogiri
+      vagrant up --provider "$vagrant_provider" 2>&1 | grep -v nokogiri
     fi
   fi
 }
@@ -36,7 +36,9 @@ function vm_run() {
 # ARGS: none
 # Returns: nothing, just starts the vm if stopped
 function vm_ip() {
-  vm_run
-  vagrant ssh -c '/var/www/html/code/bin/get-ip.sh' 3>&1 1>&2 2>&3 3>&- | grep -v nokogiri
+  vagrant ssh -c '/var/www/html/code/bin/get-ip.sh' 2>&1 | grep -v nokogiri
 }
 
+function vm_build_iso {
+  vagrant ssh -c "/var/www/html/code/bin/vagrant-build.sh $env_name $mach_def" 2>&1 | grep -v nokogiri
+}

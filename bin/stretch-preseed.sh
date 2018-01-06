@@ -164,7 +164,7 @@ d-i finish-install/reboot_in_progress note
 tasksel tasksel/first multiselect none
 
 # ntp curl net-tools dnsutils
-d-i pkgsel/include string openssh-server
+d-i pkgsel/include string openssh-server mdadm lvm2
 
 d-i pkgsel/upgrade select none
 popularity-contest popularity-contest/participate boolean false

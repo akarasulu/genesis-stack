@@ -2,6 +2,7 @@
 
 BASE_DIR="`dirname \"$0\"`"
 BASE_DIR="`( cd \"$BASE_DIR\" && pwd )`"
+TOP_DIR="$BASE_DIR/.."
 
 if [ -z "$TOP_DIR" ]; then
   TOP_DIR="$BASE_DIR"
@@ -19,7 +20,7 @@ if [ -z "$(echo $PATH | grep 'genesis-stack/bin')" ]; then
   export PATH=$TOP_DIR/bin
 fi
 
-if [ ! -d "$overrides" ]; then
+if [ ! -f "$overrides" ]; then
   echo "No overrides directy setup: $overrides"
   echo "This might present problems in development mode with the virtual machine."
 fi
@@ -43,5 +44,5 @@ fi
 echo "Cleaning up past runs ..."
 echo "    => " $(cleanup.sh)
 echo "Firing up virtual machine ..."
-echo "    => " vm_run
+echo "    => "
 vm_run
