@@ -10,10 +10,14 @@ name: 'boot'
 mountPoint: '/boot'
 type: 'ext4'
 size: 256
+vg: ''
 
 ---
 name: 'swap'
+mountPoint: ''
 size: '200%'
+type: 'swap'
+vg: 'sys'
 
 ---
 name: 'usr'

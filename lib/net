@@ -267,8 +267,6 @@ query_string () {
   return "$qs"
 }
 
-# TODO - test it
-
 # ARG $1: the path
 # ARG $2: [optional] the URL base (extracts from $base_url if present)
 #         which is http://SERVER:PORT without the extra '/' at the end

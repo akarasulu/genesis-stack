@@ -2,6 +2,10 @@
 BASE_DIR="`dirname \"$0\"`"
 BASE_DIR="`( cd \"$BASE_DIR\" && pwd )`"
 
+if [ "$USER" == "root" -a -f /preseed.cfg ]; then
+  TOP_DIR='/genesis-stack/code'
+fi
+
 if [ -z "$TOP_DIR" ]; then
   TOP_DIR="$BASE_DIR/.."
 fi
@@ -9,15 +13,20 @@ fi
 . $TOP_DIR/lib/general
 . $TOP_DIR/lib/yaml
 
-# Pulls in environments var which we need
+# Pulls in environments vars which we need
 rec 0 $TOP_DIR/settings.yml
 overrides="$(eval echo $overrides)"
 if [ -f "$overrides/settings.yml" ]; then
   rec 0 "$overrides/settings.yml"
 fi
 
+# Running inside the virtual machine
 if [ "$USER" == "vagrant" -a "$(hostname)" == "iso-builder" ]; then
   environments='/var/www/html/environments'
+# Running inside the Debian Installer
+elif [ "$USER" == "root" -a -f /preseed.cfg ]; then
+  environments='/genesis-stack/environments'
+# Running elsewhere (on devtop)
 else
   environments="$(eval echo $environments)"
 fi

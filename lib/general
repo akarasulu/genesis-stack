@@ -58,7 +58,7 @@ debug_step () {
 
   rm -f "$lock_file"
   rm -f "$message_file"
-  echo "[DEBUG] blocking waiting for \'touch $lock_file\'" > "$message_file"
+  echo "[DEBUG] blocking waiting for creation of $lock_file" > "$message_file"
 
   if [ -n "$2" ]; then
     echo "[DEBUG] $2" >> "$message_file"
@@ -66,12 +66,44 @@ debug_step () {
 
   while true; do
     if [ -f "$lock_file" ]; then
+      contents="$(cat $lock_file)"
+      echo "[DEBUG] found contents of $lock_file = $contents" >&2
+      if [ "$contents" == '-x' ]; then
+        set -x
+      elif [ "$contents" == '+x' ]; then
+        set +x
+      fi
+
       rm "$lock_file"
       rm "$message_file"
       break;
     fi
 
     sleep 1
+  done
+}
+
+debug () {
+  echo "[DEBUG] Debug loop started." >&2
+  while true; do
+    sleep 1;
+    if [ -n "$(ls /tmp | grep *.message)" ]; then
+      file="$(ls /tmp | grep -o 'debug\..*\.message' | head -n 1)"
+      if [ -z "$file" ]; then
+        continue;
+      fi
+
+      op="$(echo $file | sed -e 's/\.message$//' -e 's/^debug\.//')"
+      cat "/tmp/$file" >&2
+      echo "Use -x/+x before <enter> to toggle debugging. Continue with $op operation?" >&2
+      read input;
+
+      if [ -n "$input" ]; then
+        echo "$input" > /tmp/debug.$op
+      else 
+        touch /tmp/debug.$op; 
+      fi
+    fi; 
   done
 }
 

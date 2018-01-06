@@ -50,7 +50,11 @@ debug_step () {
   done
 }
 
-debug_step postinst_init
+if [ "\$1" == "skip" ]; then
+  echo "Skipping first debug point"
+else
+  debug_step postinst_init
+fi
 
 wget "$net_url"
 . ./net

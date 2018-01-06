@@ -36,52 +36,55 @@ while [ $ii -lt $records ]; do
     info "Creating the swap logical volume"
     act_size=$size
 
-    if [ -n "$(echo size | grep %)" ]; then
-      act_size="$(echo size | grep %)"
+    if [ -n "$(echo $size | grep %)" ]; then
+      act_size="$(echo $size | sed -e 's/%//')"
 
       mem=$(grep MemTotal: /proc/meminfo | sed -e 's/ //g' -e 's/kB//' | cut -d':' -f2)
       mem=$((mem / 1024))
       act_size=$((act_size / 100 * mem))
 
-      info "Using percent specifier ($size) for swap logical volume size of $act_size"
+      info "Using percent specifier ($size) for swap size"
+      info "Using $act_size M for swap with a memory capacity of $mem"' M'
     else
       info "Using amount specifier ($size) for swap logical volume size"
     fi
 
-    lvcreate -y -n $name -L $act_size sys
-    swap_uuid="$(mkswap /dev/sys/swap | grep UUID | cut -d'=' -f2)"
-    swapon /dev/sys/swap
+    lvcreate -y -n swap -L $act_size $vg
+    mkswap /dev/sys/swap
     echo "/dev/mapper/$vg-swap none swap sw 0 0" >> "$fstab"
   elif [ "$name" == "boot" ]; then
     info "Skipping boot because it has already created by DI"
-  elif [ "$name" == "vm" ]; then
-    lvcreate -n $name -L $size'M' data
-    
-    if [ -z "$(echo $type | egrep '^ext[2|3|4]' )" ]; then
-      mkfs."$type" -F -F -L $name /dev/data/vm
-    else
-      mkfs."$type" -F -F -L $name -T huge /dev/data/vm
-    fi
-
-    echo "/dev/mapper/$vg-vm $mountPoint $type defaults 0 2" >> "$fstab"
   else
     lvcreate -n "$name" -L "$size"'M' "$vg"
-    mkfs."$type" -F -F -L "$name" "/dev/$vg/$name"
+
+    if [ "$name" == "vm" ]; then
+      mkfs."$type" -F -F -L "$name" -T huge "/dev/$vg/$name"
+    else
+      mkfs."$type" -F -F -L "$name" "/dev/$vg/$name"
+    fi
+
     src="/mnt/root$mountPoint"
     dst="/target$mountPoint"
-
     mkdir -p "$dst" 
     mkdir -p "$src"
 
     mount "/dev/$vg/$name" "$dst"
 
-    # We handle root last
+    if [ "$name" == "opt" -o "$name" == "usr" ]; then
+      mkdir -p "$dst/local" 
+    fi
+
+    # We handle others first, then root last after this loop
     if [ "$name" != "root" ]; then
-      cd "/mnt/root$mountPoint"
+      cd $src
       tar cf - . | (cd "$dst" && tar xf -)
-        
-      rm -rf "/mnt/root$mountPoint"
-      sync
+
+      if [ "$DEBUG" != 'enabled' ]; then
+        cd /
+        rm -rf "$src"
+        sync
+      fi
+
       umount -l "$dst"
 
       # Add entries into fstab
@@ -94,14 +97,70 @@ done
 
 debug_step postinst_lvfs_restore_root
 
+# Without all the other partitions backup the root the tar
+# command on DI does not have the single file system option
 cd /mnt/root
 tar cf - . | (cd /target && tar xf -)
 
-cd /
-rm -rf /mnt/root
-sync; sync; sync
-umount -l /mnt
-umount -l /target
+debug_step postinst_lvfs_cleanup
+
+## Cleanup and umount USB
+if [ "$DEBUG" != 'enabled' ]; then
+  cd /
+  rm -rf /mnt/root
+  sync; sync; sync
+  umount -l /mnt
+fi
+
+# Now we have to install grub because the root partition changed
+# let's make sure also that we mount and check all the filesystems
+# We will have to use in-target to properly install grub with the
+# new disk configuraiton.
+
+debug_step postinst_mount
+
+ii=0
+while [ $ii -lt $records ]; do
+  rec $ii "$file_systems"
+  info "name=$name, mountPoint=$mountPoint, type=$type, vg=$vg, size=$size, rec=$ii"
+
+  if [ "$name" == "swap" ]; then
+    info "skipping swap, no mount point"
+  elif [ "$name" == "root" ]; then
+    info "skipping root, already mounted on /target"
+  elif [ "$name" == "boot" ]; then
+    dst="/target$mountPoint"
+    result=$(cut -d' ' -f2 /proc/mounts | grep "^$dst\$")
+    
+    if [ -n "$result" ]; then
+      info "skipping $name, already mounted"
+    else
+      info "mounting $name on $dst"
+      mount "$boot_part" "$dst"
+    fi
+  else
+    dst="/target$mountPoint"
+    result=$(cut -d' ' -f2 /proc/mounts | grep "^$dst\$")
+    
+    if [ -n "$result" ]; then
+      info "skipping $name, already mounted"
+    else
+      info "mounting $name on $dst"
+      mount "/dev/$vg/$name" "$dst"
+    fi
+  fi
+  ii=$((ii + 1))
+done
+
+debug_step postinst_grub_prep
+
+mkdir -p /target/proc
+mount --bind /proc /target/proc
+mount --bind /dev  /target/dev
+mount --bind /sys  /target/sys
+
+debug_step postinst_grub
+
+chroot /target grub-install /dev/sda
 
 debug_step postinst_lvfs_finish
-
