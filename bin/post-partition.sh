@@ -32,8 +32,6 @@ while [ $ii -lt $count ]; do
   fi
 
   all_drives+=("$deviceId")
-  debug "all_drives = ${all_drives[@]}"
-  debug "all_drives size = ${#all_drives[@]}"
   capacities+=(["$deviceId"]="$capacity")
   ((ii++))
 done
@@ -80,19 +78,19 @@ mach_dir="\$env_dir/$mach_def"
 
 # Find values for installation
 boot_part="\$(boot_partition)"
-
-# Let's presume if we cannot detect (we know installer does this)
-if [ -z "\$boot_part" ]; then
-  boot_part='/dev/sda1'
-fi
+debug "boot_part = \$boot_part"
 
 boot_drive="\$(boot_drive)"
 if [ -z "\$boot_drive" ]; then
   boot_drive='/dev/sda'
 fi
+debug "boot_drive = \$boot_drive"
 
 boot_sectors="\$(fdisk -s \$boot_part)"
-boot_size=\$((boot_sectors * 2))
+boot_sectors=\$((boot_sectors * 2))
+boot_size=\$((boot_sectors / 1024 / 2))
+debug "boot_sectors = \$boot_sectors"
+debug "boot_size = \$boot_size"
 
 # Selected strategy variables
 disks=$disks
@@ -235,6 +233,7 @@ if [ "$md0" != "no" ]; then
     exp_md0_drive_set="$exp_md0_drive_sizes $exp_md0_drive_count $(echo $exp_md0_drives | sed -e 's/ /,/g')"
     exp_other_drive="${hdd_drives[0]}"
     exp_other_drive_size="${capacities[$other_drive]}"
+    exp_total_drive_count="${#all_drives[@]}"
   elif [ $hdds -gt 1 ]; then
     for drive in "${hdd_drives[@]}"; do
       exp_md0_drives="$exp_md0_drives $drive"
@@ -244,11 +243,29 @@ if [ "$md0" != "no" ]; then
     exp_md0_drive_count="${#hdd_drives[@]}"
     exp_md0_drive_set="$exp_md0_drive_sizes $exp_md0_drive_count $(echo $exp_md0_drives | sed -e 's/ /,/g')"
     exp_other_drive="${ssd_drives[0]}"
-    exp_other_drive_size="${capacities[$other_drive]}"
+    exp_other_drive_size="${capacities[$exp_other_drive]}"
+    exp_total_drive_count="${#all_drives[@]}"
+
+    debug "exp_other_drive = $exp_other_drive"
+    debug "exp_other_drive_size = $exp_other_drive_size"
+    debug "exp_total_drive_count = $exp_total_drive_count"
   else
     err "Illegal state: we should have at least one raid set!"
     exit 10
   fi
+
+  cat >> $script <<-EOF
+# These are the expected disks
+exp_md0_drive_set="$exp_md0_drive_set"
+exp_md0_drive_count="$exp_md0_drive_count"
+exp_md0_drive_sizes="$exp_md0_drive_sizes"
+exp_md0_drives="$exp_md0_drives"
+
+exp_other_drive="$exp_other_drive"
+exp_other_drive_size="$exp_other_drive_size"
+exp_total_drive_count="$exp_total_drive_count"
+
+EOF
 
   cat $TOP_DIR/bin/one-raid-set                     >> $script
   cat $TOP_DIR/bin/logical_volumes                  >> $script

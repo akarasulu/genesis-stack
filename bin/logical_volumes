@@ -7,6 +7,8 @@
 # size: 8192
 #
 
+lvcreate_cmd='lvcreate -y -Wy -Zy'
+
 debug_step postinst_lvfs_create
 
 # For new use this temporary new one
@@ -49,13 +51,13 @@ while [ $ii -lt $records ]; do
       info "Using amount specifier ($size) for swap logical volume size"
     fi
 
-    lvcreate -y -n swap -L $act_size $vg
+    $lvcreate_cmd -n swap -L $act_size $vg
     mkswap /dev/sys/swap
     echo "/dev/mapper/$vg-swap none swap sw 0 0" >> "$fstab"
   elif [ "$name" == "boot" ]; then
     info "Skipping boot because it has already created by DI"
   else
-    lvcreate -n "$name" -L "$size"'M' "$vg"
+    $lvcreate_cmd -n "$name" -L "$size"'M' "$vg"
 
     if [ "$name" == "vm" ]; then
       mkfs."$type" -F -F -L "$name" -T huge "/dev/$vg/$name"
@@ -130,14 +132,8 @@ while [ $ii -lt $records ]; do
     info "skipping root, already mounted on /target"
   elif [ "$name" == "boot" ]; then
     dst="/target$mountPoint"
-    result=$(cut -d' ' -f2 /proc/mounts | grep "^$dst\$")
-    
-    if [ -n "$result" ]; then
-      info "skipping $name, already mounted"
-    else
-      info "mounting $name on $dst"
-      mount "$boot_part" "$dst"
-    fi
+    info "mounting boot partition $boot_part on $dst"
+    mount "$boot_part" "$dst"
   else
     dst="/target$mountPoint"
     result=$(cut -d' ' -f2 /proc/mounts | grep "^$dst\$")

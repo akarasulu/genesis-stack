@@ -1,0 +1,4 @@
+--- storage
+cpus: 2
+ram: 2048
+virtual: false

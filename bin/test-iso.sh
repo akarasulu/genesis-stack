@@ -98,13 +98,13 @@ else
 usb_image="$mach_def_path/usb-drive.qcow2"
 usb_dev='sdz'
 
-  qemu-system-x86_64 -enable-kvm -m $ram -usb                                   \
+  time qemu-system-x86_64 -enable-kvm -m $ram -usb                              \
     -boot menu=on                                                               \
     -drive if=none,id=$usb_dev,file=$usb_image,boot=on,index=0                  \
     -device usb-ehci,id=ehci                                                    \
     -device usb-storage,bus=ehci.0,drive=$usb_dev                               \
     -device virtio-scsi-pci,id=scsi                                             \
-    $devices -net nic -net bridge,br=br0                                        \
+    $devices -net nic -net bridge,br=$test_bridge                               \
     -fsdev local,security_model=passthrough,id=fsdev0,path=$TOP_DIR             \
     -device virtio-9p-pci,id=fs0,fsdev=fsdev0,mount_tag=hostshare
 fi

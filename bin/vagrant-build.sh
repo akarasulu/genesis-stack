@@ -2,8 +2,9 @@
 
 function usage() {
     echo
-    echo "Creates a multi-purpose (medium) ISO installer for a machine"
-    echo "definition or all machine definitions within an environment."
+    echo "Creates a multi-purpose (medium) ISO installer for one or more"
+    echo "machine definitions or all within an environment. This script is"
+    echo "intended to be executed on an image builder machine."
     echo
     echo "test-iso <environment> [<machine> ]*"
     echo
@@ -25,15 +26,23 @@ TOP_DIR="$BASE_DIR/.."
 . $TOP_DIR/lib/settings
 . $TOP_DIR/lib/load_env_mach "$1" "$2"
 
+# Start fresh from scratch every time
 rm -rf installer
 apt-get source -y debian-installer
 mv `find . -maxdepth 1 -type d -regex '^./debian-installer-2.*'` installer
 
+# Patch the installer with the customized machine patch
 patch -R -p0 < "/var/www/html/environments/$env_name/$mach_def/installer.patch"
 
+# Prepare the installer
 cd installer/build
 echo 'PRESEED=/var/www/html/environments/'$env_name/$mach_def'/preseed.cfg' > config/local
 echo 'USE_UDEBS_FROM=stretch' >> config/local
+
+udebs='/var/www/html/environments/'$env_name/$mach_def'/udebs'
+if [ -f "$udebs" ]; then
+  cat "$udebs" >> pkg-lists/local
+fi 
 
 fakeroot make rebuild_netboot
 

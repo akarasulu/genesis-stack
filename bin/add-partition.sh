@@ -14,6 +14,7 @@ target="$(mktemp)"
 
 qemu-img convert -O qcow2 "$iso" "$target"
 qemu-img resize "$target" +2G
+sudo modprobe nbd max_part=8
 sudo qemu-nbd --connect=/dev/nbd6 "$target"
 echo "n
 p

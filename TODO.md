@@ -2,15 +2,7 @@
 
 ## Major Problems
 
-- need to test other raid configurations to see they work too
-  - compute-t0 1-disk
-  - compute-t1 2-disks
-  - storage-t0 1-raid
-  - storage-t1 1-disk 1-raid
-  - storage-t2 2-raid
-
-- need to log to the webserer using request parameters (based 64 log text)
-- add config logic **NOT** to touch existing raid or lvm partitions with existing data
+- Need to log to the webserer using request parameters (based 64 log text)
 - [vagrant] ansible installation
 - [vagrant] ansible integration with access log watcher for installers
 - hook scripts for different states (keep in machine def): installing, post-install, rebooted
@@ -19,6 +11,14 @@
 - [pkgsel] add file for adding additional packages
 - switch to dhcp so we can have multiple machines being provisioned for each definition
 
+- change name in installer greeter
+- use graphical greeter on boot
+- use different splash screens
+
+- Add config logic **NOT** to touch existing raid or lvm partitions with existing data
+
+- Make it pick up more specific file systems and use the environment filesystem
+  as the fall back up to the environments file system configuration file.
 
 ## Minor Problems
 
@@ -47,3 +47,17 @@ Generate the environment and hosts file.
 - Start using some logging library
 - Add Approx and Cacher NG use from VM (if not present in environment)
 - packer builds of virtual machines
+
+## Tested Configurations
+
+- **compute-t0**: one large HDD gpt
+- **compute-t1**: one small SSD dos (sys:data ratio not observed)
+- **compute-t2**: one small SDD dos (boot), one large HDD
+
+- **storage-t1**: one small SSD dos (boot), four large HDD RAID
+
+
+## NOT yet tested but should be
+
+- **storage-t2**: two small SDD dos (boot), four large HDD RAID
+- **compute-t3**: t2 with device order reversed (should produce same results)

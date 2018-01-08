@@ -19,6 +19,9 @@
 # exp_drive_dev_id (short deviceId i.e. sda, sdb, sdc etc)
 #
 
+pvcreate_cmd='pvcreate -f -y'
+vgcreate_cmd='vgcreate -f -y'
+
 debug_step postinst_parts_one_drive_checks
 
 act_total_drive_count=$(list_drives | wc -w)
@@ -60,22 +63,27 @@ fi
 
 debug_step postinst_parts_one_drive_changes
 
-# First destroy two extended partitions #2 and #5 created from the installation
-fdisk_part_del       '/dev/'$act_drive_dev_id'5'
-fdisk_part_del       '/dev/'$act_drive_dev_id'2'
-
 # Subtract boot partition space and use to actculate sys and data partition sizes
+debug "boot_size = $boot_size"
+debug "act_drive_capacity = $act_drive_capacity"
 capacity_available=$((act_drive_capacity - boot_size))
-sys_size=$(actc_sys_size $ratio $act_drive_capacity)
+debug "capacity_available = $capacity_available"
 
-# Create second primary partition for sys based on ratio
-fdisk_primary   '/dev/'$act_drive_dev_id $sys_size
-pvcreate -f -y  '/dev/'$act_drive_dev_id'2' # <-- note the 2 for second partition
-vgcreate sys    '/dev/'$act_drive_dev_id'2' # <-- note the 2 for second partition
+debug "ratio = $ratio"
+sys_size=$(calc_sys_size $ratio $act_drive_capacity)
+debug "Calculated system volume group size = $sys_size"
 
-# Create data partition taking remainder which should follow ratios
-fdisk_primary   '/dev/'$act_drive_dev_id
-pvcreate -f -y  '/dev/'$act_drive_dev_id'3' # <-- note the 3 for second partition
-vgcreate data   '/dev/'$act_drive_dev_id'3' # <-- note the 3 for second partition
+prep_boot_drive
+next_part="$(cat /tmp/next_part)"
+
+fdisk_lvm            '/dev/'$act_drive_dev_id$next_part $sys_size'M'
+$pvcreate_cmd        '/dev/'$act_drive_dev_id$next_part
+$vgcreate_cmd sys    '/dev/'$act_drive_dev_id$next_part
+
+next_part=$((next_part + 1))
+
+fdisk_lvm            '/dev/'$act_drive_dev_id$next_part
+$pvcreate_cmd        '/dev/'$act_drive_dev_id$next_part
+$vgcreate_cmd data   '/dev/'$act_drive_dev_id$next_part
 
 debug_step postinst_parts_one_drive_finish

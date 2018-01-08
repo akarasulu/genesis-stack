@@ -51,6 +51,7 @@ other_drive_size=0
 
 ds_file="$(mktemp)"
 drive_sets > "$ds_file"
+debug `drive_sets`
 
 while read drive_sizes drive_count drives ; do
   if [ $drive_count -gt 1 ]; then
@@ -65,6 +66,16 @@ while read drive_sizes drive_count drives ; do
   fi
 done < "$ds_file"
 
+debug "act_md0_drive_count = $act_md0_drive_count"
+debug "act_md0_drive_sizes = $act_md0_drive_sizes"
+debug "act_md0_drives = $act_md0_drives"
+
+debug "exp_other_drive = $exp_other_drive"
+debug "exp_other_drive_size = $exp_other_drive_size"
+
+debug "other_drive = $other_drive"
+debug "other_drive_size = $other_drive_size"
+
 if [ $act_md0_drive_count -lt 2 ]; then
   err "Could not find a drive set containing more than two drives."
   debug_step postinst_parts_one_raid_set_finish
@@ -75,20 +86,30 @@ fi
 # Error checking
 #
 
+debug "Checking total drive counts ..."
+debug "exp_total_drive_count = $exp_total_drive_count"
+debug "act_total_drive_count = $act_total_drive_count"
+
 if [ $exp_total_drive_count -ne $act_total_drive_count ]; then
   err "The drive counts do not match!"
   err "Encountered $act_total_drive_count drives, but expected $exp_total_drive_count"
   debug_step postinst_parts_one_raid_set_finish
   exit 2
+else 
+  info "The expected total drive count matches the actual: $act_total_drive_count"
 fi
 
+debug "Checking RAID drive counts ..."
 if [ $exp_md0_drive_count -ne $act_md0_drive_count ]; then
   err "The md0 drive counts do not match!"
   err "Encountered $act_md0_drive_count drives, but expected $exp_md0_drive_count"
   debug_step postinst_parts_one_raid_set_finish
   exit 3
+else 
+  info "The expected and actual raid set drive counts for md0 match: $act_md0_drive_count"
 fi
 
+debug "Checking drive sizes ..."
 if [ $exp_md0_drive_sizes -ne $act_md0_drive_sizes ]; then
   warn "The md0 drive sizes do not match!"
   warn "Encountered $act_md0_drive_sizes drive sizes, but expected $exp_md0_drive_sizes"
@@ -100,48 +121,42 @@ if [ $exp_md0_drive_sizes -ne $act_md0_drive_sizes ]; then
     debug_step postinst_parts_one_raid_set_finish
     exit 4
   fi
+else
+  info "The expected md0 sizes match the actual: $act_md0_drive_sizes M"
 fi
 
 #
 # Partition and Create Raid Devices
 #
 
-# if includes boot drive, then second part is raid, otherwise first
-raid_part=1
-boot_drive_dev_id="$(echo $boot_drive | sed -e 's@/dev/@@')"
-if [ -n "$(echo $act_md0_drives | grep $boot_drive_dev_id)" ]; then
-  raid_part=2
-fi
+prep_boot_drive
+next_part="$(cat /tmp/next_part)"
+debug "next_part = $next_part"
+debug "boot_drive = $boot_drive"
 
 debug_step postinst_parts_one_raid_set_create_raidset
 
+boot_drive_in_raidset="$(echo $act_md0_drives | grep -o $boot_drive)"
+debug "boot_drive_in_raidset = $boot_drive_in_raidset"
+
 md0_raid_devs=''
-info "Starting partitioning on md0 devices: $act_md0_drives"
-for d in $act_md0_drives; do
-  if [ "/dev/$d" == "$boot_drive" -a $raid_part -eq 2 ]; then
-    info "First primary partition ($boot_part) already exists on the boot drive ($d)."
-    info "Need to delete extended partitions"
-
-    # TODO: explicitly delete partitions by number instead of from tail
-    fdisk_part_del "/dev/$d"'5'
-    fdisk_part_del "/dev/$d"'2'
-    
-    info "Creating second primary RAID partition for rest of drive $d"
-    fdisk_raid_p2 "/dev/$d"
-  elif [ $raid_part -eq 2 ]; then
-    info "Creating dos partition table on $d"
-    info "Creating partition equal in size ($boot_size) to boot partition ($boot_part) on ($d)"
-    fdisk_primary "/dev/$d" "$boot_size"
-
-    info "Creating second primary RAID partition for rest of drive $d"
-    fdisk_raid_p2 "/dev/$d"
-  else 
-    info "Creating first RAID partition for all of drive $d"
-    fdisk_raid_p1 "/dev/$d"
-  fi
-
-  md0_raid_devs="$md0_raid_devs /dev/$d"$raid_part
-done
+if [ -n "$boot_drive_in_raidset" ]; then
+  for d in $act_md0_drives; do
+    if [ "$d" == "$boot_drive" ]; then
+      fdisk_raid $d$next_part
+    else
+      fdisk_gpt $d
+      fdisk_raid $d$next_part
+    fi
+    md0_raid_devs="$md0_raid_devs /dev/$d$next_part"
+  done
+else 
+  for d in $act_md0_drives; do
+    fdisk_gpt $d
+    fdisk_raid $d'1'
+    md0_raid_devs="$md0_raid_devs /dev/$d"'1'
+  done
+fi
 
 level="$(echo $md0 | sed -e 's/^rl//')"
 info "Creating RAID Level $level md0 device"
@@ -166,8 +181,13 @@ fi
 
 debug_step postinst_parts_one_raid_set_create_pvvglvm
 
+debug "ratio = $ratio"
+debug "next_part = $next_part"
+
 # Sys and data may be shared on md0
 if [ "$ratio" != "na" -a "$sys" == "md0" -a "$data" == "md0" ]; then
+  debug "System and data partitions are shared on the same raid, other device not available for boot"
+
   fdisk_gpt /dev/md0
   sys_size=$(calc_sys_size $ratio $md0_size)
   fdisk_lvm_p1 /dev/md0 $sys_size'M'
@@ -180,29 +200,53 @@ if [ "$ratio" != "na" -a "$sys" == "md0" -a "$data" == "md0" ]; then
   # Data VG
   pvcreate -f -y /dev/md0p1
   vgcreate data /dev/md0p1
-elif [ $other_drive_size -lt $act_md0_drive_sizes -a "$boot_drive_dev_id" == "$other_drive" ]; then
-  # other drive is SSD, md0 on HDD
-  fdisk_primary /dev/$other_drive
+elif [ $other_drive_size -lt $act_md0_drive_sizes -a "$boot_drive" == "$other_drive" ]; then
+  debug "Using the other SSD drive $other_drive for boot and the system volume group"
+
+  # other drive is SSD with has the boot partition, md0 is on HDD
+  fdisk_lvm "/dev/$other_drive""$next_part"
 
   # System VG on SSD Partition (other single drive)
-  pvcreate -f -y /dev/$other_drive'2'
-  vgcreate sys /dev/$other_drive'2'
+  pvcreate -f -y "/dev/$other_drive""$next_part"
+  vgcreate sys "/dev/$other_drive""$next_part"
 
   # Data VG on RAID
   pvcreate -f -y /dev/md0
   vgcreate data /dev/md0
-else
-  # other drive is HDD, md0 on SSD, 
+elif [ $other_drive_size -gt $act_md0_drive_sizes -a "$boot_drive" == "$other_drive" ]; then
+  debug "Using the other drive HDD $other_drive for boot and the data volume group"
 
-  # System VG on SSD RAID
+  # Other drive is an HDD and the boot partition is on it, md0 is probably on SSD
+  fdisk_lvm /dev/$other_drive$next_part
+
+  pvcreate -f -y /dev/$other_drive$next_part
+  vgcreate data /dev/$other_drive$next_part
+
   pvcreate -f -y /dev/md0
   vgcreate sys /dev/md0
-
-  # Data VG on HDD Partition (other single drive)
+elif [ "$boot_drive" != "$other_drive" -a -n "$boot_drive_in_raidset" ]; then
   fdisk_gpt /dev/$other_drive
-  fdisk_primary /dev/$other_drive
-  pvcreate -f -y /dev/$other_drive'1'
-  vgcreate data /dev/$other_drive'1'
+  fdisk_lvm /dev/$other_drive
+
+  if [ $other_drive_size -gt $act_md0_drive_sizes ]; then 
+     pvcreate -f -y /dev/$other_drive'1'
+     vgcreate data  /dev/$other_drive'1'
+     
+     # System VG on SSD RAID
+     pvcreate -f -y /dev/md0
+     vgcreate sys /dev/md0
+  else 
+     pvcreate -f -y /dev/$other_drive'1'
+     vgcreate sys  /dev/$other_drive'1'
+     
+     # Data VG on SSD RAID
+     pvcreate -f -y /dev/md0
+     vgcreate data /dev/md0
+  fi
+else
+  err "This drive configuration was not caught by our logic!"
+  err "Could not determine how to create volume groups. Aborting."
+  exit 6;
 fi
 
-  debug_step postinst_parts_one_raid_set_finish
+debug_step postinst_parts_one_raid_set_finish

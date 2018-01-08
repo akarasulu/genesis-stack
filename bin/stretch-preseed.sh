@@ -37,6 +37,71 @@ BASE_URL='http://'$KEYS_HOST':'$KEYS_PORT'/environments/'$env_name'/'$mach_def
 
 ENABLE_NETCON="$DEBUG"
 
+strategy="$environments/disk-strategy.yml"
+drives="$mach_def_path/drives.yml"
+
+count=$(count $drives)
+
+declare -a all_drives
+declare -a ssd_drives
+declare -A capacities
+declare -a hdd_drives
+
+ii=0
+while [ $ii -lt $count ]; do
+  rec "$ii" "$drives"
+  if [ "$is_rotational" == "true" ]; then
+    hdd_drives+=("$deviceId")
+  else
+    ssd_drives+=("$deviceId")
+  fi
+
+  all_drives+=("$deviceId")
+  capacities+=(["$deviceId"]="$capacity")
+  ((ii++))
+done
+
+# Load the matching disk utilization strategy
+ii=0
+count="$(count $strategy)"
+# Loads disks, ssds, hdds, ceph, md0, md1, sys, data, ratio, var_home, vm, contrib
+while [ $ii -lt $count ]; do
+  pat='^disks[[:space:]]+: '"${#all_drives[@]}"'$'
+  rec "$ii" "$strategy" "$pat"
+  if [ $disks -eq ${#all_drives[@]} -a $ssds -eq ${#ssd_drives[@]} -a $hdds -eq ${#hdd_drives[@]} ]; then
+    if [ "$ceph" == "$ceph_available" ]; then
+      break;
+    fi
+  fi
+  ((ii++))
+done
+
+# Read all the pkgsel packages and add mdadm if raid capable
+packages_file="$mach_def_path/packages"
+PACKAGES='openssh-server lvm2'
+if [ "$md0" != "no" -o "$md1" != "no" ]; then
+  PACKAGES="$PACKAGES mdadm"
+fi
+
+if [ -f "$packages_file" ]; then
+  while read pkg; do
+    pkg="$(trim $pkg)"
+
+    if [ -z "$pkg" ]; then
+      continue
+    fi
+
+    if [ -z "$(echo $PACKAGES | grep $pkg)" ]; then
+      PACKAGES="$PACKAGES $pkg"
+    else
+      debug "Looks like pkg $pkg was already added to the packages list"
+      debug "Will not add twice"
+    fi
+  done < "$packages_file"
+
+  info "Adding package selections: $PACKAGES" 
+fi
+
 cat > $preseed_path <<-EOF
 d-i debconf/priority                   select critical
 d-i auto-install/enabled               boolean true
@@ -92,7 +157,9 @@ d-i clock-setup/ntp boolean true
 d-i clock-setup/ntp-server string $NTP_HOST
 EOF
 
-if [ "$USE_DHCP" == "true" ]; then
+# If the machine definition does not have a mach_installer_ip defined
+# we will use DHCP by default. This must be defined in the machine.yml
+if [ "$USE_DHCP" == "true" -o -z "$mach_installer_ip" ]; then
 cat >> $preseed_path <<-EOF
 
 # Network Conifgurations
@@ -105,13 +172,14 @@ EOF
 else
 # TODO: need to figure out hash to use on mach_def name to
 # get a unique IP address for each machine on the network?
+# mach_installer_ip must be defined in the machine definition
 cat >> $preseed_path <<-EOF
 
 # Network Conifgurations
 d-i netcfg/choose_interface select auto
 d-i netcfg/disable_dhcp                boolean true
 d-i netcfg/get_nameservers             string $CLOUD_DNS
-d-i netcfg/get_ipaddress               string 172.16.1.212
+d-i netcfg/get_ipaddress               string $mach_installer_ip
 d-i netcfg/get_netmask                 string $CLOUD_NETMASK
 d-i netcfg/get_gateway                 string $CLOUD_GATEWAY
 d-i netcfg/confirm_static              boolean true
@@ -164,9 +232,9 @@ d-i finish-install/reboot_in_progress note
 tasksel tasksel/first multiselect none
 
 # ntp curl net-tools dnsutils
-d-i pkgsel/include string openssh-server mdadm lvm2
-
+d-i pkgsel/include string $PACKAGES
 d-i pkgsel/upgrade select none
+
 popularity-contest popularity-contest/participate boolean false
 
 d-i hw-detect/load_firmware boolean true

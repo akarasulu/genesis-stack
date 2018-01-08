@@ -68,6 +68,10 @@ rm ./net
 . '/genesis-stack/code/lib/disk'
 . '/genesis-stack/code/lib/net'
 
+if [ ! -f /tmp/boot_partition ]; then
+  grep boot /proc/mounts | cut -d' ' -f1 > /tmp/boot_partition
+fi
+
 debug_step postinst_dokeys
 
 # 4th USB drive partition for backup (created in process)

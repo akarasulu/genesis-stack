@@ -1,0 +1,32 @@
+---
+deviceId: 'sda'
+vendor: 'SEAGATE'
+family: 'barracuda'
+model: 'ST3000DM001'
+capacity: 3001000
+is_rotational: true
+
+---
+deviceId: 'sdb'
+vendor: 'SEAGATE'
+family: 'barracuda'
+model: 'ST3000DM001'
+capacity: 3001000
+is_rotational: true
+
+---
+deviceId: 'sdc'
+vendor: 'SEAGATE'
+family: 'barracuda'
+model: 'ST3000DM001'
+capacity: 3001000
+is_rotational: true
+
+---
+deviceId: 'sdd'
+vendor: 'SEAGATE'
+family: 'barracuda'
+model: 'ST3000DM001'
+capacity: 3001000
+is_rotational: true
+

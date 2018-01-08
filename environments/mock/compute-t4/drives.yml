@@ -1,0 +1,16 @@
+---
+deviceId: 'sda'
+vendor: 'KINGSTON'
+family: 'ssdnow'
+model: 'SV300S3'
+capacity: 240000
+is_rotational: false
+
+---
+deviceId: 'sdb'
+vendor: 'KINGSTON'
+family: 'ssdnow'
+model: 'SV300S3'
+capacity: 240000
+is_rotational: false
+

@@ -123,54 +123,80 @@ w
 "|fdisk "$dev"
 }
 
-# ARGS $1: the drive device i.e. /dev/sda to create a RAID partition on
-fdisk_raid_p1 () {
-  local dev="$1"
-  local code="fd"
+fdisk_raid () {
+  local drive_dev="$(echo $1 | sed -e 's/[0-9]\+$//')"
+  debug "drive_dev = $drive_dev"
 
-  if [ "$(pttype $1)" == "gpt" ]; then
+  local pt="$(pttype $drive_dev)"
+  debug "pt = $pt"
+
+  local part_num="$(echo $1 | egrep -o '[0-9]+$')"
+  debug "part_num = $part_num"
+
+  local size="$2"
+  debug "size = $size"
+
+  local code=''
+
+  if [ "$pt" == "dos" ]; then
+    code="fd"
+  else 
     code="29"
   fi
 
-  if [ -z "$(echo $1 | egrep '^/dev/')" ]; then
-    dev="/dev/$1"
+  debug "code = $code"
+
+  # check if /dev/ is NOT prefixed and if NOT add it
+  if [ -z "$(echo $drive_dev | egrep '^/dev/')" ]; then
+    drive_dev="/dev/$drive_dev"
   fi
 
+  debug "Full drive_dev = $drive_dev"
+  
+  if [ -n "$size" -a "$pt" == "dos" ]; then
 echo "n
 p
+$part_num
 
++$size
+t
+$part_num
+$code
+w
+"|fdisk "$drive_dev"
+  elif [ -n "$size" -a "$pt" == "gpt" ]; then
+echo "n
+$part_num
+
++$size
+t
+$part_num
+$code
+w
+"|fdisk "$drive_dev"
+  elif [ "$pt" == "dos" ]; then
+echo "n
+p
+$part_num
 
 
 t
+$part_num
 $code
 w
-"|fdisk "$dev"
-}
-
-# ARGS $1: the drive device i.e. /dev/sda to create a RAID partition on
-fdisk_raid_p2 () {
-  local dev="$1"
-  local code="fd"
-
-  if [ "$(pttype $1)" == "gpt" ]; then
-    code="29"
-  fi
-
-  if [ -z "$(echo $1 | egrep '^/dev/')" ]; then
-    dev="/dev/$1"
-  fi
+"|fdisk "$drive_dev"
+  else
 echo "n
-p
-
+$part_num
 
 
 t
-
+$part_num
 $code
 w
-"|fdisk "$dev"
+"|fdisk "$drive_dev"
+  fi
 }
-
 
 # ARGS $1: the drive device i.e. /dev/sda to create a primary partition on
 # ARGS $2: the size of the partition in sectors or in bytes scale accepted by fdisk
@@ -212,6 +238,84 @@ pttype () {
 
   fdisk -l "$dev" | egrep '^Disklabel type:' | sed -e 's/Disklabel type: //'
 }
+
+# ARGS $1: the drive device partition i.e. /dev/sda2 to create a LVM partition on
+# ARGS $2: the size in sectors or megabytes
+fdisk_lvm () {
+  local drive_dev="$(echo $1 | sed -e 's/[0-9]\+$//')"
+  debug "drive_dev = $drive_dev"
+
+  local pt="$(pttype $drive_dev)"
+  debug "pt = $pt"
+
+  local part_num="$(echo $1 | egrep -o '[0-9]+$')"
+  debug "part_num = $part_num"
+
+  local size="$2"
+  debug "size = $size"
+
+  local code=''
+
+  if [ "$pt" == "dos" ]; then
+    code="8e"
+  else 
+    code="31"
+  fi
+
+  debug "code = $code"
+
+  # check if /dev/ is NOT prefixed and if NOT add it
+  if [ -z "$(echo $drive_dev | egrep '^/dev/')" ]; then
+    drive_dev="/dev/$drive_dev"
+  fi
+
+  debug "Full drive_dev = $drive_dev"
+  
+  if [ -n "$size" -a "$pt" == "dos" ]; then
+echo "n
+p
+$part_num
+
++$size
+t
+$part_num
+$code
+w
+"|fdisk "$drive_dev"
+  elif [ -n "$size" -a "$pt" == "gpt" ]; then
+echo "n
+$part_num
+
++$size
+t
+$part_num
+$code
+w
+"|fdisk "$drive_dev"
+  elif [ "$pt" == "dos" ]; then
+echo "n
+p
+$part_num
+
+
+t
+$part_num
+$code
+w
+"|fdisk "$drive_dev"
+  else
+echo "n
+$part_num
+
+
+t
+$part_num
+$code
+w
+"|fdisk "$drive_dev"
+  fi
+}
+
 
 # ARGS $1: the drive device i.e. /dev/sda to create a LVM partition on
 # ARGS $2: the size in sectors or megabytes
@@ -411,7 +515,12 @@ parted_capacity () {
 }
 
 boot_partition () {
-    df -h /target/boot | grep /target/boot | cut -d ' ' -f1
+  if [ -f /tmp/boot_partition ]; then
+    cat /tmp/boot_partition
+  else
+    grep '/boot' /proc/mounts | cut -d' ' -f1 > /tmp/boot_partition
+    cat /tmp/boot_partition
+  fi
 }
 
 boot_drive () {
@@ -426,6 +535,70 @@ build_md0 () {
 build_md1 () {
   local devs="$1"
 }
+
+prep_boot_drive () {
+  # IMPORTANT NOTE
+  #
+  # The partition manager takes different strategies based on the nature
+  # of a single drive. If large it uses a GPT partition table. If small 
+  # it uses a dos partition table. And the partitions and number of them
+  # that are created are different based on the size.
+  #
+  # For large single drive configurations DI seems to be creating 3 different
+  # partitions on the single drive with the boot partition set to sda2, the
+  # second partition. Here's what the fdisk of a large drive looks like:
+  #
+  # ~ # fdisk -l /dev/sda
+  # Disk /dev/sda: 2.9 TiB, 3146776576000 bytes, 6146048000 sectors
+  # Units: sectors of 1 * 512 = 512 bytes
+  # Sector size (logical/physical): 512 bytes / 512 bytes
+  # I/O size (minimum/optimal): 512 bytes / 512 bytes
+  # Disklabel type: gpt
+  # Disk identifier: 093345E8-6FB0-4D97-978F-D13717B39EC4
+  # 
+  # Device      Start        End    Sectors  Size Type
+  # /dev/sda1    2048       4095       2048    1M BIOS boot
+  # /dev/sda2    4096     503807     499712  244M Linux filesystem
+  # /dev/sda3  503808 6146045951 6145542144  2.9T Linux LVM
+  #
+  # When a smaller drive with a dos partition table is used the boot partition
+  # is the first partition rather than the second. An extended partition is
+  # used with the #2 and #5 lvm partition:
+  # 
+  # ~ # fdisk -l /dev/sda
+  # Disk /dev/sda: 234.4 GiB, 251658240000 bytes, 491520000 sectors
+  # Units: sectors of 1 * 512 = 512 bytes
+  # Sector size (logical/physical): 512 bytes / 512 bytes
+  # I/O size (minimum/optimal): 512 bytes / 512 bytes
+  # Disklabel type: dos
+  # Disk identifier: 0x33834c96
+  # 
+  # Device     Boot  Start       End   Sectors   Size Id Type
+  # /dev/sda1  *      2048    499711    497664   243M 83 Linux
+  # /dev/sda2       501758 491517951 491016194 234.1G  5 Extended
+  # /dev/sda5       501760 491517951 491016192 234.1G 8e Linux LVM
+  #
+
+  # We will make decisions based on the partition type of the drive
+  # as does the Debian Installer partition manager.
+  local bd=$(boot_drive)
+  local pt="$(pttype $bd)"
+  debug "Boot Disk $bd Partition Table Type: $pt"
+
+  if [ "$pt" == "dos" ]; then
+    # We destroy the 2nd and 5th extended partitions in reverse order
+    fdisk_part_del       '/dev/'$bd'5'
+    fdisk_part_del       '/dev/'$bd'2'
+    echo 2 > /tmp/next_part
+  elif [ "$pt" == "gpt" ]; then
+    fdisk_part_del       '/dev/'$bd'3'
+    echo 3 > /tmp/next_part
+  else
+    error "Do not know what to do with partition type of $pt"
+    error "Returning nonzero ..."
+    return 1
+  fi
+} 
 
 calc_sys_size () {
   local ratio="$1"
