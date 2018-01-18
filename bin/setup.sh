@@ -72,7 +72,7 @@ vagrantLibvirt(){
 vagrantLibvirt
 
 # TODO: check for vagrant
-Vagrant(){
+vagrant(){
   local var=`vagrant --version`
   if [ $? -eq 0 ]; then
     echo " 'vagrant' is currently not installed "
@@ -87,7 +87,7 @@ Vagrant(){
     echo "$var"| tail -n1
   fi
   }
-Vagrant
+vagrant
 
 # TODO: check for proper networking setup
 ping_net(){
